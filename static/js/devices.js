@@ -74,4 +74,19 @@ function renderDevices(devices) {
 
 document.addEventListener("DOMContentLoaded", () => {
   DanteStore.subscribe(renderDevices);
+
+  const restartBtn = document.getElementById("restart-daemon-btn");
+  if (restartBtn) {
+    restartBtn.addEventListener("click", async () => {
+      restartBtn.disabled = true;
+      try {
+        const result = await api("POST", "/api/daemon/restart", {});
+        showToast(result.message || "Daemon restart requested");
+      } catch (err) {
+        showToast(err.message, true);
+      } finally {
+        restartBtn.disabled = false;
+      }
+    });
+  }
 });

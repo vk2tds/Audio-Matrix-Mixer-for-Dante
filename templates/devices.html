@@ -3,8 +3,15 @@
 {% block content %}
 <div class="panel">
   <div class="hint-row">
-    <div class="hint">Dante devices discovered on the network via the netaudio daemon.</div>
-    <button type="button" id="refresh-btn">Refresh</button>
+    <div class="hint">
+      Dante devices discovered on the network via the netaudio daemon. If devices look stuck (stale, won't come
+      back online) even though the daemon process is alive, use Restart daemon — it only works when running via
+      <code>run.sh</code>.
+    </div>
+    <div class="hint-row-buttons">
+      <button type="button" id="refresh-btn">Refresh</button>
+      <button type="button" id="restart-daemon-btn">Restart daemon</button>
+    </div>
   </div>
   <table id="device-table">
     <thead>

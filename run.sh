@@ -17,6 +17,7 @@ fi
 mkdir -p logs
 DAEMON_LOG="logs/netaudio-daemon.log"
 APP_LOG="logs/dante-web.log"
+DAEMON_PIDFILE="logs/daemon.pid"
 
 DAEMON_PID=""
 APP_PID=""
@@ -26,14 +27,19 @@ cleanup() {
   echo "Stopping..."
   [ -n "$APP_PID" ] && kill "$APP_PID" 2>/dev/null
   [ -n "$DAEMON_PID" ] && kill "$DAEMON_PID" 2>/dev/null
+  rm -f "$DAEMON_PIDFILE"
   wait 2>/dev/null
   exit 0
 }
 trap cleanup INT TERM
 
+# The pidfile lets Dante-web's "Restart daemon" button signal this exact
+# supervised process directly, instead of `netaudio server restart` (which
+# doesn't know about this supervision loop and will fight it for port 9000).
 start_daemon() {
   "$VENV_NETAUDIO" server run >>"$DAEMON_LOG" 2>&1 &
   DAEMON_PID=$!
+  echo "$DAEMON_PID" >"$DAEMON_PIDFILE"
   echo "netaudio daemon started (pid $DAEMON_PID) — log: $DAEMON_LOG"
 }
 

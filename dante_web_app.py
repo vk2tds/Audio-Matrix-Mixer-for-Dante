@@ -1,5 +1,6 @@
 import logging
 import os
+import signal
 
 from flask import Flask, Response, jsonify, render_template, request
 
@@ -10,6 +11,8 @@ import presets_store
 
 app = Flask(__name__)
 log = logging.getLogger("dante-web")
+
+DAEMON_PIDFILE = os.path.join(os.path.dirname(__file__), "logs", "daemon.pid")
 
 
 def proxy(method, path, json_body=None):
@@ -99,6 +102,40 @@ def api_identify():
 @app.route("/api/refresh", methods=["POST"])
 def api_refresh():
     return proxy("POST", "/refresh", request.get_json(force=True, silent=True) or {})
+
+
+@app.route("/api/daemon/restart", methods=["POST"])
+def api_restart_daemon():
+    # Deliberately does NOT call `netaudio server restart` — that command
+    # doesn't know about run.sh's supervision loop and will race it for
+    # port 9000 (confirmed live: it left two daemons fighting over the
+    # port and the supervisor stuck in a crash loop). Instead this signals
+    # the exact process run.sh is tracking via its pidfile, and lets that
+    # same loop notice the death and restart it, the same path already
+    # exercised by an actual daemon crash.
+    try:
+        with open(DAEMON_PIDFILE) as f:
+            pid = int(f.read().strip())
+    except (FileNotFoundError, ValueError):
+        error = "No daemon pidfile found — this only works when running via run.sh."
+        activity_log.log_event("daemon:restart", None, ok=False, error=error)
+        return jsonify({"error": error}), 409
+
+    try:
+        os.kill(pid, 0)
+    except OSError:
+        error = f"Daemon process {pid} isn't running (stale pidfile)."
+        activity_log.log_event("daemon:restart", {"pid": pid}, ok=False, error=error)
+        return jsonify({"error": error}), 409
+
+    try:
+        os.kill(pid, signal.SIGTERM)
+    except OSError as exc:
+        activity_log.log_event("daemon:restart", {"pid": pid}, ok=False, error=str(exc))
+        return jsonify({"error": str(exc)}), 500
+
+    activity_log.log_event("daemon:restart", {"pid": pid}, ok=True)
+    return jsonify({"success": True, "message": f"Signaled daemon (pid {pid}) to stop — run.sh will restart it within ~5s."})
 
 
 @app.route("/api/subscribe", methods=["POST"])

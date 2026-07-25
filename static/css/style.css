@@ -159,6 +159,12 @@ main {
   flex-shrink: 0;
 }
 
+.hint-row-buttons {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;
