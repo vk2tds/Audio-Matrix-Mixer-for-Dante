@@ -3,6 +3,7 @@ import os
 
 from flask import Flask, Response, jsonify, render_template, request
 
+import netaudio_cli
 import netaudio_client as relay
 import presets_store
 
@@ -54,6 +55,11 @@ def presets_page():
 @app.route("/config")
 def config_page():
     return render_template("config.html")
+
+
+@app.route("/flows")
+def flows_page():
+    return render_template("flows.html")
 
 
 # --- API proxy ---------------------------------------------------------
@@ -198,6 +204,43 @@ def api_apply_preset(pid):
 
     applied = sum(1 for r in results if r["ok"])
     return jsonify({"success": True, "applied": applied, "total": len(results), "results": results})
+
+
+# --- TX multicast flows (CLI-backed, not the daemon relay) -----------------
+# The relay has no /flow endpoint, so these shell out to `netaudio flow`
+# directly. Slower and less reliable than everything above.
+
+
+@app.route("/api/flows/<path:device_name>")
+def api_list_flows(device_name):
+    try:
+        flows = netaudio_cli.list_flows(device_name)
+    except netaudio_cli.CliError as exc:
+        return jsonify({"error": str(exc)}), 502
+    return jsonify(flows)
+
+
+@app.route("/api/flows/<path:device_name>", methods=["POST"])
+def api_create_flow(device_name):
+    body = request.get_json(force=True, silent=True) or {}
+    slot = body.get("slot")
+    channels = body.get("channels")
+    if not slot or not channels:
+        return jsonify({"error": "slot and channels are required"}), 400
+    try:
+        netaudio_cli.create_flow(device_name, slot, channels)
+    except netaudio_cli.CliError as exc:
+        return jsonify({"error": str(exc)}), 502
+    return jsonify({"success": True})
+
+
+@app.route("/api/flows/<path:device_name>/<int:slot>", methods=["DELETE"])
+def api_delete_flow(device_name, slot):
+    try:
+        netaudio_cli.delete_flow(device_name, slot)
+    except netaudio_cli.CliError as exc:
+        return jsonify({"error": str(exc)}), 502
+    return jsonify({"success": True})
 
 
 @app.route("/api/events")

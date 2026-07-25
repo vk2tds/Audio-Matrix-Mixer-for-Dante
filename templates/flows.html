@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Flows – Dante Web{% endblock %}
+{% block content %}
+<div class="panel">
+  <div class="hint">
+    TX multicast flows — for when many receivers need the same source at once. Unlike the rest of this app, these
+    actions shell out to the <code>netaudio</code> CLI directly (the daemon's relay has no <code>/flow</code>
+    endpoint yet), so each one re-discovers the device over mDNS and can take several seconds. In testing here,
+    "Create" reported success without the flow reliably showing up afterward on some hardware — treat results as
+    unconfirmed and check "Load flows" after creating.
+  </div>
+  <div id="flows-devices">
+    <div class="empty">Waiting for devices…</div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/flows.js') }}"></script>
+{% endblock %}

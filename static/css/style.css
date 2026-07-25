@@ -710,3 +710,48 @@ section.tx h4, section.rx h4 {
     display: block;
   }
 }
+
+/* Flows */
+.flow-table-container table {
+  margin-bottom: 12px;
+}
+
+.flow-create-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.flow-create-row label {
+  color: var(--text-dim);
+  font-size: 13px;
+}
+
+.flow-create-row .flow-slot-input {
+  width: 70px;
+  background: var(--panel-alt);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: var(--radius);
+  padding: 6px 10px;
+  font-size: 13px;
+}
+
+.flow-channels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  flex: 1;
+}
+
+.flow-channel-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--text);
+  cursor: pointer;
+}
