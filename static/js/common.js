@@ -141,4 +141,18 @@ document.addEventListener("DOMContentLoaded", () => {
       a.classList.add("active");
     }
   });
+
+  const themeToggle = document.getElementById("theme-toggle");
+  if (themeToggle) {
+    const setIcon = (theme) => {
+      themeToggle.textContent = theme === "dark" ? "☀️" : "🌙";
+    };
+    setIcon(document.documentElement.getAttribute("data-theme") || "light");
+    themeToggle.addEventListener("click", () => {
+      const next = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
+      document.documentElement.setAttribute("data-theme", next);
+      localStorage.setItem("dante-web-theme", next);
+      setIcon(next);
+    });
+  }
 });

@@ -4,6 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Dante Web{% endblock %}</title>
+  <script>
+    document.documentElement.setAttribute("data-theme", localStorage.getItem("dante-web-theme") || "light");
+  </script>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
@@ -20,6 +23,7 @@
       <span class="dot" id="conn-dot"></span>
       <span id="conn-label">connecting…</span>
     </div>
+    <button type="button" id="theme-toggle" class="theme-toggle" title="Toggle light/dark mode" aria-label="Toggle light/dark mode"></button>
   </header>
   <main>
     {% block content %}{% endblock %}
