@@ -1,1 +1,93 @@
-{}
+{
+  "8eccf076-d1bb-4a01-ac43-dcf12a7722d2": {
+    "name": "Test",
+    "actions": [
+      {
+        "action": "add",
+        "rx_device": "DA11ADE-83b77d",
+        "rx_device_label": "DA11ADE-83b77d",
+        "rx_channel": 1,
+        "rx_channel_label": "CH1",
+        "tx_device": "DA11AEN-83b5a8",
+        "tx_device_label": "DA11AEN-83b5a8",
+        "tx_channel": "CH1",
+        "tx_channel_label": "CH1"
+      },
+      {
+        "action": "add",
+        "rx_device": "DA11ADE-83b77d",
+        "rx_device_label": "DA11ADE-83b77d",
+        "rx_channel": 2,
+        "rx_channel_label": "CH2",
+        "tx_device": "DA11AEN-83b5a8",
+        "tx_device_label": "DA11AEN-83b5a8",
+        "tx_channel": "CH1",
+        "tx_channel_label": "CH1"
+      },
+      {
+        "action": "remove",
+        "rx_device": "DA11ADE-83b8e8",
+        "rx_device_label": "DA11ADE-83b8e8",
+        "rx_channel": 2,
+        "rx_channel_label": "CH2",
+        "tx_device": "DA11AEN-83b5a8",
+        "tx_device_label": "DA11AEN-83b5a8",
+        "tx_channel": "CH1",
+        "tx_channel_label": "CH1"
+      }
+    ],
+    "created_at": 1784973464.237386,
+    "updated_at": 1784973464.237386
+  },
+  "f306fac4-137b-46da-96d4-8cf65fd11f60": {
+    "name": "Two",
+    "actions": [
+      {
+        "action": "add",
+        "rx_device": "DA11ADE-83b8e8",
+        "rx_device_label": "DA11ADE-83b8e8",
+        "rx_channel": 2,
+        "rx_channel_label": "CH2",
+        "tx_device": "DA11AEN-83b5a8",
+        "tx_device_label": "DA11AEN-83b5a8",
+        "tx_channel": "CH1",
+        "tx_channel_label": "CH1"
+      },
+      {
+        "action": "add",
+        "rx_device": "DA11ADE-83b77d",
+        "rx_device_label": "DA11ADE-83b77d",
+        "rx_channel": 2,
+        "rx_channel_label": "CH2",
+        "tx_device": "DA11AEN-83b5a8",
+        "tx_device_label": "DA11AEN-83b5a8",
+        "tx_channel": "CH1",
+        "tx_channel_label": "CH1"
+      },
+      {
+        "action": "add",
+        "rx_device": "DA11ADE-83b77d",
+        "rx_device_label": "DA11ADE-83b77d",
+        "rx_channel": 1,
+        "rx_channel_label": "CH1",
+        "tx_device": "DA11AEN-83b5a8",
+        "tx_device_label": "DA11AEN-83b5a8",
+        "tx_channel": "CH1",
+        "tx_channel_label": "CH1"
+      },
+      {
+        "action": "add",
+        "rx_device": "DA11ADE-83b8e8",
+        "rx_device_label": "DA11ADE-83b8e8",
+        "rx_channel": 1,
+        "rx_channel_label": "CH1",
+        "tx_device": "DA11AEN-83b5a8",
+        "tx_device_label": "DA11AEN-83b5a8",
+        "tx_channel": "CH1",
+        "tx_channel_label": "CH1"
+      }
+    ],
+    "created_at": 1784973873.895259,
+    "updated_at": 1784973873.895259
+  }
+}

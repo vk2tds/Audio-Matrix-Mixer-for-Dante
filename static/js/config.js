@@ -42,11 +42,22 @@ function buildNumberRow(labelText, value, onSave) {
 
 function buildSelectRow(labelText, currentValue, options, onSave) {
   const select = document.createElement("select");
+  const known = currentValue !== null && currentValue !== undefined;
+
+  if (!known) {
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = "— unknown —";
+    placeholder.disabled = true;
+    placeholder.selected = true;
+    select.appendChild(placeholder);
+  }
+
   for (const opt of options) {
     const o = document.createElement("option");
     o.value = opt;
     o.textContent = opt;
-    if (currentValue !== null && currentValue !== undefined && Number(currentValue) === Number(opt)) {
+    if (known && Number(currentValue) === Number(opt)) {
       o.selected = true;
     }
     select.appendChild(o);
@@ -148,7 +159,7 @@ function buildDeviceCard(device) {
   );
 
   card.appendChild(
-    buildSelectRow("Encoding (bit)", null, [16, 24, 32], async (value) => {
+    buildSelectRow("Encoding (bit)", device.encoding ?? device.bit_depth, [16, 24, 32], async (value) => {
       await api("POST", "/api/set-encoding", { device: deviceKey(device), encoding: Number(value) });
     })
   );
