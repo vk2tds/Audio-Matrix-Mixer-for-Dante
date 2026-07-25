@@ -2,7 +2,10 @@
 {% block title %}Devices – Dante Web{% endblock %}
 {% block content %}
 <div class="panel">
-  <div class="hint">Dante devices discovered on the network via the netaudio daemon.</div>
+  <div class="hint-row">
+    <div class="hint">Dante devices discovered on the network via the netaudio daemon.</div>
+    <button type="button" id="refresh-btn">Refresh</button>
+  </div>
   <table id="device-table">
     <thead>
       <tr>

@@ -2,7 +2,10 @@
 {% block title %}Connections – Dante Web{% endblock %}
 {% block content %}
 <div class="panel">
-  <div class="hint">Every active subscription across all devices, updated live.</div>
+  <div class="hint-row">
+    <div class="hint">Every active subscription across all devices, updated live.</div>
+    <button type="button" id="refresh-btn">Refresh</button>
+  </div>
   <table id="connections-table">
     <thead>
       <tr>

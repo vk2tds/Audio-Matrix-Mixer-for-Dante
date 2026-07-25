@@ -7,8 +7,42 @@
     <input type="text" id="filter-tx" placeholder="Filter transmitters…">
     <input type="text" id="filter-rx" placeholder="Filter receivers…">
   </div>
+  <div class="preset-toolbar">
+    <button type="button" id="record-toggle">Record changes for a preset</button>
+    <button type="button" id="save-matrix-btn">Save current matrix as preset…</button>
+  </div>
   <div class="matrix-wrap" id="matrix-wrap">
     <div class="empty">Waiting for devices…</div>
+  </div>
+  <div class="compact-view" id="compact-view">
+    <div class="empty">Waiting for devices…</div>
+  </div>
+</div>
+
+<div class="panel" id="record-panel" style="display: none;">
+  <div class="hint">Recording — only these changes will be applied when this preset is used later.</div>
+  <ul class="preset-action-list" id="record-list"></ul>
+  <div class="button-row">
+    <button type="button" id="record-save-btn" class="primary">Save as preset…</button>
+    <button type="button" id="record-discard-btn">Discard recording</button>
+  </div>
+</div>
+
+<div class="panel" id="save-dialog" style="display: none;">
+  <div class="hint" id="save-dialog-hint">Save preset</div>
+  <div class="save-dialog-row">
+    <label for="save-dialog-existing">Update existing</label>
+    <select id="save-dialog-existing">
+      <option value="">— new preset —</option>
+    </select>
+  </div>
+  <div class="save-dialog-row">
+    <label for="save-dialog-name">Name</label>
+    <input type="text" id="save-dialog-name" placeholder="Preset name">
+  </div>
+  <div class="button-row">
+    <button type="button" id="save-dialog-save-btn" class="primary">Save</button>
+    <button type="button" id="save-dialog-cancel-btn">Cancel</button>
   </div>
 </div>
 {% endblock %}

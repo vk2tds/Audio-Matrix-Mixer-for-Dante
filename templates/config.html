@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Config – Dante Web{% endblock %}
+{% block content %}
+<div class="panel">
+  <div class="hint-row">
+    <div class="hint">Per-device configuration. Not every field is supported by every device — a save that has no effect usually means the device doesn't implement that control. This page loads once; use Reload to pull fresh values (it won't overwrite anything you're editing).</div>
+    <button type="button" id="config-reload-btn">Reload</button>
+  </div>
+  <div id="config-list">
+    <div class="empty">Waiting for devices…</div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/config.js') }}"></script>
+{% endblock %}

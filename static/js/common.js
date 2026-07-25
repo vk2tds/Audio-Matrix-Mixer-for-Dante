@@ -109,6 +109,25 @@ function deviceLabel(device) {
   return device.name || device.server_name || "";
 }
 
+function deviceKey(device) {
+  return device.name || device.server_name;
+}
+
+function findRxChannelNumber(rxDevice, rxChannelName) {
+  const receivers = (rxDevice.channels && rxDevice.channels.receivers) || {};
+  for (const [num, ch] of Object.entries(receivers)) {
+    if (ch.name === rxChannelName) return Number(num);
+  }
+  return null;
+}
+
+function actionLabel(action) {
+  if (action.action === "add") {
+    return `+ ${action.tx_device_label || action.tx_device} · ${action.tx_channel_label || action.tx_channel} → ${action.rx_device_label || action.rx_device} · ${action.rx_channel_label || action.rx_channel}`;
+  }
+  return `− ${action.rx_device_label || action.rx_device} · ${action.rx_channel_label || action.rx_channel}`;
+}
+
 function showToast(message, isError) {
   const el = document.createElement("div");
   el.className = "toast" + (isError ? " error" : "");
@@ -141,6 +160,21 @@ document.addEventListener("DOMContentLoaded", () => {
       a.classList.add("active");
     }
   });
+
+  const refreshBtn = document.getElementById("refresh-btn");
+  if (refreshBtn) {
+    refreshBtn.addEventListener("click", async () => {
+      refreshBtn.disabled = true;
+      try {
+        await api("POST", "/api/refresh", {});
+        showToast("Refreshed from daemon");
+      } catch (err) {
+        showToast(err.message, true);
+      } finally {
+        refreshBtn.disabled = false;
+      }
+    });
+  }
 
   const themeToggle = document.getElementById("theme-toggle");
   if (themeToggle) {

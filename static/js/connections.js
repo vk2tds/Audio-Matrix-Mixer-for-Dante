@@ -1,14 +1,3 @@
-function deviceKey(device) {
-  return device.name || device.server_name;
-}
-
-function findRxChannelNumber(rxDevice, rxChannelName) {
-  const receivers = (rxDevice.channels && rxDevice.channels.receivers) || {};
-  for (const [num, ch] of Object.entries(receivers)) {
-    if (ch.name === rxChannelName) return Number(num);
-  }
-  return null;
-}
 
 function renderConnections(devices) {
   const tbody = document.getElementById("connections-rows");

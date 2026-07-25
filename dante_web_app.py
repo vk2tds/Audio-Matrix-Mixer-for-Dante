@@ -4,6 +4,7 @@ import os
 from flask import Flask, Response, jsonify, render_template, request
 
 import netaudio_client as relay
+import presets_store
 
 app = Flask(__name__)
 log = logging.getLogger("dante-web")
@@ -43,6 +44,16 @@ def gain_page():
 @app.route("/metering")
 def metering_page():
     return render_template("metering.html")
+
+
+@app.route("/presets")
+def presets_page():
+    return render_template("presets.html")
+
+
+@app.route("/config")
+def config_page():
+    return render_template("config.html")
 
 
 # --- API proxy ---------------------------------------------------------
@@ -131,6 +142,62 @@ def api_metering_start():
 @app.route("/api/metering/stop", methods=["POST"])
 def api_metering_stop():
     return proxy("POST", "/metering/stop", request.get_json(force=True, silent=True) or {})
+
+
+@app.route("/api/presets")
+def api_list_presets():
+    return jsonify(presets_store.list_presets())
+
+
+@app.route("/api/presets/<pid>")
+def api_get_preset(pid):
+    preset = presets_store.get_preset(pid)
+    if preset is None:
+        return jsonify({"error": "preset not found"}), 404
+    return jsonify(preset)
+
+
+@app.route("/api/presets", methods=["POST"])
+def api_save_preset():
+    body = request.get_json(force=True, silent=True) or {}
+    name = (body.get("name") or "").strip()
+    if not name:
+        return jsonify({"error": "name is required"}), 400
+    actions = body.get("actions")
+    if not isinstance(actions, list) or not actions:
+        return jsonify({"error": "actions must be a non-empty list"}), 400
+    pid = body.get("id")
+    pid = presets_store.save_preset(pid, name, actions)
+    return jsonify({"success": True, "id": pid})
+
+
+@app.route("/api/presets/<pid>", methods=["DELETE"])
+def api_delete_preset(pid):
+    presets_store.delete_preset(pid)
+    return jsonify({"success": True})
+
+
+@app.route("/api/presets/<pid>/apply", methods=["POST"])
+def api_apply_preset(pid):
+    preset = presets_store.get_preset(pid)
+    if preset is None:
+        return jsonify({"error": "preset not found"}), 404
+
+    results = []
+    for action in preset["actions"]:
+        try:
+            if action["action"] == "add":
+                data, status = relay.subscribe(
+                    action["rx_device"], action["rx_channel"], action["tx_channel"], action["tx_device"]
+                )
+            else:
+                data, status = relay.unsubscribe(action["rx_device"], action["rx_channel"])
+            results.append({**action, "ok": status < 400, "response": data})
+        except relay.RelayError as exc:
+            results.append({**action, "ok": False, "response": {"error": str(exc)}})
+
+    applied = sum(1 for r in results if r["ok"])
+    return jsonify({"success": True, "applied": applied, "total": len(results), "results": results})
 
 
 @app.route("/api/events")

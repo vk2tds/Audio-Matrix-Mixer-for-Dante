@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Presets – Dante Web{% endblock %}
+{% block content %}
+<div class="panel">
+  <div class="hint">
+    Saved routing presets. Applying a preset only touches the channels it lists — everything else is left alone.
+    Build presets from the <a href="/routing">Routing</a> page: record specific changes, or save the whole current matrix.
+  </div>
+  <table id="presets-table">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Actions</th>
+        <th>Updated</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody id="presets-rows">
+      <tr><td class="empty" colspan="4">Loading…</td></tr>
+    </tbody>
+  </table>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/presets.js') }}"></script>
+{% endblock %}

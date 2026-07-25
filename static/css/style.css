@@ -144,6 +144,21 @@ main {
   margin-bottom: 12px;
 }
 
+.hint-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.hint-row .hint {
+  margin-bottom: 12px;
+}
+
+.hint-row button {
+  flex-shrink: 0;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;
@@ -491,4 +506,207 @@ section.tx h4, section.rx h4 {
   color: var(--text-dim);
   font-size: 11px;
   text-transform: uppercase;
+}
+
+/* Presets */
+.preset-toolbar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.button-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.preset-action-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.preset-action-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+
+.preset-action-list li:last-child {
+  border-bottom: none;
+}
+
+.preset-action-list li.add {
+  color: var(--good);
+}
+
+.preset-action-list li.remove {
+  color: var(--bad);
+}
+
+.preset-action-list li span {
+  color: var(--text);
+}
+
+.preset-action-list li button {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  line-height: 1;
+}
+
+.save-dialog-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.save-dialog-row label {
+  width: 110px;
+  flex-shrink: 0;
+  color: var(--text-dim);
+  font-size: 13px;
+}
+
+.save-dialog-row input,
+.save-dialog-row select {
+  flex: 1;
+  background: var(--panel-alt);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: var(--radius);
+  padding: 6px 10px;
+  font-size: 13px;
+}
+
+/* Device config */
+.config-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.config-card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.config-card-header h3 {
+  margin: 0;
+  font-size: 15px;
+  flex: 1;
+}
+
+.config-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+}
+
+.config-row label {
+  width: 140px;
+  flex-shrink: 0;
+  color: var(--text-dim);
+  font-size: 13px;
+}
+
+.config-row input[type="text"],
+.config-row input[type="number"],
+.config-row select {
+  flex: 1;
+  max-width: 220px;
+  background: var(--panel-alt);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: var(--radius);
+  padding: 6px 10px;
+  font-size: 13px;
+}
+
+.config-row input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+}
+
+.config-channels {
+  margin-top: 10px;
+  border-top: 1px solid var(--border);
+  padding-top: 8px;
+}
+
+.config-channels summary {
+  cursor: pointer;
+  color: var(--text-dim);
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.config-channels .config-row {
+  padding-left: 4px;
+}
+
+/* Compact (mobile) routing view */
+.compact-view {
+  display: none;
+}
+
+.compact-device {
+  margin-bottom: 18px;
+}
+
+.compact-device h3 {
+  margin: 0 0 8px;
+  font-size: 14px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+}
+
+.compact-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 0;
+}
+
+.compact-row label {
+  width: 90px;
+  flex-shrink: 0;
+  font-size: 13px;
+}
+
+.compact-row select {
+  flex: 1;
+  background: var(--panel-alt);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: var(--radius);
+  padding: 8px 10px;
+  font-size: 14px;
+}
+
+@media (max-width: 700px) {
+  .matrix-toolbar,
+  .preset-toolbar,
+  .matrix-wrap {
+    display: none;
+  }
+
+  .compact-view {
+    display: block;
+  }
 }
