@@ -136,8 +136,25 @@ function showToast(message, isError) {
   setTimeout(() => el.remove(), isError ? 5000 : 2800);
 }
 
+// Toast when a device's online status changes. previousOnline starts empty
+// on every page load, so the first snapshot just establishes the baseline
+// rather than firing a toast for every already-known device.
+const previousOnline = {};
+
+function checkOnlineTransitions(devices) {
+  for (const [serverName, device] of Object.entries(devices)) {
+    const wasOnline = previousOnline[serverName];
+    const isOnline = Boolean(device.online);
+    if (wasOnline !== undefined && wasOnline !== isOnline) {
+      showToast(`${deviceLabel(device)} ${isOnline ? "is back online" : "went offline"}`, !isOnline);
+    }
+    previousOnline[serverName] = isOnline;
+  }
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   DanteStore.connect();
+  DanteStore.subscribe(checkOnlineTransitions);
 
   const dot = document.getElementById("conn-dot");
   const label = document.getElementById("conn-label");
