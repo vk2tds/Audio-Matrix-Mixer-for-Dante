@@ -755,3 +755,12 @@ section.tx h4, section.rx h4 {
   color: var(--text);
   cursor: pointer;
 }
+
+/* Activity */
+.activity-detail {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  color: var(--text-dim);
+  max-width: 420px;
+  word-break: break-word;
+}

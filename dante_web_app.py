@@ -3,6 +3,7 @@ import os
 
 from flask import Flask, Response, jsonify, render_template, request
 
+import activity_log
 import netaudio_cli
 import netaudio_client as relay
 import presets_store
@@ -15,7 +16,17 @@ def proxy(method, path, json_body=None):
     try:
         data, status = relay._request(method, path, json_body)
     except relay.RelayError as exc:
+        if method == "POST":
+            activity_log.log_event(path, json_body, ok=False, error=str(exc))
         return jsonify({"error": str(exc)}), 502
+
+    if method == "POST":
+        ok = status < 400
+        error = None
+        if not ok:
+            error = data.get("error") if isinstance(data, dict) else str(data)
+        activity_log.log_event(path, json_body, ok=ok, error=error)
+
     return jsonify(data), status
 
 
@@ -60,6 +71,11 @@ def config_page():
 @app.route("/flows")
 def flows_page():
     return render_template("flows.html")
+
+
+@app.route("/activity")
+def activity_page():
+    return render_template("activity.html")
 
 
 # --- API proxy ---------------------------------------------------------
@@ -203,6 +219,12 @@ def api_apply_preset(pid):
             results.append({**action, "ok": False, "response": {"error": str(exc)}})
 
     applied = sum(1 for r in results if r["ok"])
+    activity_log.log_event(
+        "preset:apply",
+        {"preset_id": pid, "preset_name": preset["name"], "applied": applied, "total": len(results)},
+        ok=applied == len(results),
+        error=None if applied == len(results) else f"{len(results) - applied} action(s) failed",
+    )
     return jsonify({"success": True, "applied": applied, "total": len(results), "results": results})
 
 
@@ -227,20 +249,31 @@ def api_create_flow(device_name):
     channels = body.get("channels")
     if not slot or not channels:
         return jsonify({"error": "slot and channels are required"}), 400
+    detail = {"device": device_name, "slot": slot, "channels": channels}
     try:
         netaudio_cli.create_flow(device_name, slot, channels)
     except netaudio_cli.CliError as exc:
+        activity_log.log_event("flow:create", detail, ok=False, error=str(exc))
         return jsonify({"error": str(exc)}), 502
+    activity_log.log_event("flow:create", detail, ok=True)
     return jsonify({"success": True})
 
 
 @app.route("/api/flows/<path:device_name>/<int:slot>", methods=["DELETE"])
 def api_delete_flow(device_name, slot):
+    detail = {"device": device_name, "slot": slot}
     try:
         netaudio_cli.delete_flow(device_name, slot)
     except netaudio_cli.CliError as exc:
+        activity_log.log_event("flow:delete", detail, ok=False, error=str(exc))
         return jsonify({"error": str(exc)}), 502
+    activity_log.log_event("flow:delete", detail, ok=True)
     return jsonify({"success": True})
+
+
+@app.route("/api/activity")
+def api_activity():
+    return jsonify(activity_log.list_events())
 
 
 @app.route("/api/events")
