@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Connections – Dante Web{% endblock %}
+{% block content %}
+<div class="panel">
+  <div class="hint">Every active subscription across all devices, updated live.</div>
+  <table id="connections-table">
+    <thead>
+      <tr>
+        <th>Receiver</th>
+        <th>Receive channel</th>
+        <th>Transmitter</th>
+        <th>Transmit channel</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody id="connections-rows">
+      <tr><td class="empty" colspan="5">Waiting for devices…</td></tr>
+    </tbody>
+  </table>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/connections.js') }}"></script>
+{% endblock %}

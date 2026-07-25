@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Dante Web{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <header class="topbar">
+    <h1>Dante Web</h1>
+    <nav class="tabs">
+      <a href="/">Devices</a>
+      <a href="/routing">Routing</a>
+      <a href="/connections">Connections</a>
+      <a href="/gain">Gain</a>
+      <a href="/metering">Metering</a>
+    </nav>
+    <div class="conn">
+      <span class="dot" id="conn-dot"></span>
+      <span id="conn-label">connecting…</span>
+    </div>
+  </header>
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+  <script src="{{ url_for('static', filename='js/common.js') }}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

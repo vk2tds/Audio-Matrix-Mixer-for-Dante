@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Gain – Dante Web{% endblock %}
+{% block content %}
+<div class="panel">
+  <div class="hint">
+    Gain is a discrete 1–5 level, applied to a transmit channel (input trim) or a receive channel (output level).
+    Not every device supports this — if a click has no effect, that channel likely doesn't expose gain control.
+  </div>
+  <div id="gain-list">
+    <div class="empty">Waiting for devices…</div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/gain.js') }}"></script>
+{% endblock %}

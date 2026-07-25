@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Metering – Dante Web{% endblock %}
+{% block content %}
+<div class="panel">
+  <div class="hint">Start metering on a device to poll its live channel levels. Levels are shown as reported by the daemon (assumed dBFS, clamped -60 to 0 for the bar).</div>
+  <div id="meter-list">
+    <div class="empty">Waiting for devices…</div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/metering.js') }}"></script>
+{% endblock %}

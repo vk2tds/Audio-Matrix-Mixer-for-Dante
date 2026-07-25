@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Routing – Dante Web{% endblock %}
+{% block content %}
+<div class="panel">
+  <div class="hint">Click a cell to route that transmit channel (column) to a receive channel (row). Click an active cell to unsubscribe it. Each receive channel can only take one source at a time. Click a device's name to collapse or expand its channels.</div>
+  <div class="matrix-toolbar">
+    <input type="text" id="filter-tx" placeholder="Filter transmitters…">
+    <input type="text" id="filter-rx" placeholder="Filter receivers…">
+  </div>
+  <div class="matrix-wrap" id="matrix-wrap">
+    <div class="empty">Waiting for devices…</div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/routing.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "dante-web",
+      "runtimeExecutable": "/Users/darryl/Documents/GitHub/Dante-web/.venv/bin/python",
+      "runtimeArgs": ["dante_web_app.py"],
+      "port": 5051
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Devices – Dante Web{% endblock %}
+{% block content %}
+<div class="panel">
+  <div class="hint">Dante devices discovered on the network via the netaudio daemon.</div>
+  <table id="device-table">
+    <thead>
+      <tr>
+        <th>Status</th>
+        <th>Name</th>
+        <th>Manufacturer / Model</th>
+        <th>Address</th>
+        <th>TX / RX</th>
+        <th>Sample rate</th>
+        <th>Latency</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody id="device-rows">
+      <tr><td class="empty" colspan="8">Waiting for devices…</td></tr>
+    </tbody>
+  </table>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/devices.js') }}"></script>
+{% endblock %}

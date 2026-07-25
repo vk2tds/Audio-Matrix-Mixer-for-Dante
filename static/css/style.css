@@ -1,0 +1,458 @@
+:root {
+  --bg: #0f1216;
+  --panel: #171b21;
+  --panel-alt: #1e232b;
+  --border: #2a313c;
+  --text: #e6e9ee;
+  --text-dim: #8a94a3;
+  --accent: #4da3ff;
+  --accent-dim: #2a5c8a;
+  --good: #3ecf6e;
+  --bad: #ef5b5b;
+  --warn: #e6b422;
+  --radius: 8px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+}
+
+header.topbar {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 12px 20px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+}
+
+header.topbar h1 {
+  font-size: 16px;
+  margin: 0;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+nav.tabs {
+  display: flex;
+  gap: 4px;
+  flex: 1;
+}
+
+nav.tabs a {
+  color: var(--text-dim);
+  text-decoration: none;
+  padding: 6px 12px;
+  border-radius: var(--radius);
+  font-weight: 500;
+}
+
+nav.tabs a:hover {
+  color: var(--text);
+  background: var(--panel-alt);
+}
+
+nav.tabs a.active {
+  color: var(--text);
+  background: var(--accent-dim);
+}
+
+.conn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-dim);
+  font-size: 12px;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-dim);
+}
+
+.dot.online {
+  background: var(--good);
+}
+
+.dot.offline {
+  background: var(--bad);
+}
+
+main {
+  padding: 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.hint {
+  color: var(--text-dim);
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  text-align: left;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+th {
+  color: var(--text-dim);
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+tr:last-child td {
+  border-bottom: none;
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  background: var(--panel-alt);
+}
+
+.status-pill .dot {
+  width: 7px;
+  height: 7px;
+}
+
+button, .btn {
+  background: var(--panel-alt);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 6px 12px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+button:hover {
+  border-color: var(--accent);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+button.primary {
+  background: var(--accent-dim);
+  border-color: var(--accent-dim);
+}
+
+button.primary:hover {
+  border-color: var(--accent);
+}
+
+.empty {
+  color: var(--text-dim);
+  padding: 24px;
+  text-align: center;
+}
+
+.toast {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  background: var(--panel-alt);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  font-size: 13px;
+  max-width: 360px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  z-index: 100;
+}
+
+.toast.error {
+  border-left-color: var(--bad);
+}
+
+/* Routing matrix */
+.matrix-toolbar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.matrix-toolbar input {
+  flex: 1;
+  background: var(--panel-alt);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: var(--radius);
+  padding: 6px 10px;
+  font-size: 13px;
+}
+
+.matrix-wrap {
+  overflow: auto;
+  max-width: 100%;
+}
+
+table.matrix {
+  display: inline-table;
+  width: auto;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 12px;
+}
+
+table.matrix th {
+  position: sticky;
+  background: var(--panel);
+  z-index: 2;
+}
+
+table.matrix thead th {
+  top: 0;
+  white-space: nowrap;
+  padding: 4px;
+}
+
+table.matrix thead tr:last-child th {
+  height: 120px;
+  vertical-align: bottom;
+}
+
+table.matrix thead th .rot {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  display: inline-block;
+  padding: 4px 2px;
+}
+
+table.matrix th.corner {
+  left: 0;
+  z-index: 3;
+}
+
+table.matrix th.group-col {
+  text-align: left;
+  vertical-align: bottom;
+  cursor: pointer;
+  padding: 4px;
+  height: 120px;
+  background: var(--panel-alt);
+  font-weight: 600;
+  border-bottom: 1px solid var(--border);
+}
+
+table.matrix th.group-col .rot {
+  white-space: nowrap;
+}
+
+table.matrix th.group-col:hover {
+  color: var(--accent);
+}
+
+table.matrix th.group-col-spacer {
+  background: var(--panel-alt);
+  border-bottom: 1px solid var(--border);
+  padding: 0;
+}
+
+table.matrix tr.group-row th {
+  position: static;
+  text-align: left;
+  background: var(--panel-alt);
+  cursor: pointer;
+  padding: 6px 10px;
+  font-weight: 600;
+}
+
+table.matrix tr.group-row th:hover {
+  color: var(--accent);
+}
+
+.collapse-toggle {
+  display: inline-block;
+  width: 14px;
+  text-align: center;
+  color: var(--text-dim);
+  font-weight: 700;
+}
+
+table.matrix tbody th {
+  left: 0;
+  text-align: right;
+  white-space: nowrap;
+  padding-right: 10px;
+  font-weight: 400;
+}
+
+table.matrix td.disabled {
+  cursor: default;
+  background: repeating-linear-gradient(45deg, var(--border), var(--border) 4px, var(--panel) 4px, var(--panel) 8px);
+}
+
+table.matrix td {
+  border: 1px solid var(--border);
+  width: 26px;
+  height: 26px;
+  text-align: center;
+  padding: 0;
+  cursor: pointer;
+  background: var(--panel-alt);
+}
+
+table.matrix td:hover {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+table.matrix td.active {
+  background: var(--accent-dim);
+}
+
+table.matrix td.active::after {
+  content: "\25CF";
+  color: var(--accent);
+}
+
+table.matrix td.pending::after {
+  content: "\22EF";
+  color: var(--warn);
+}
+
+table.matrix td.self {
+  background: repeating-linear-gradient(45deg, var(--border), var(--border) 4px, var(--panel) 4px, var(--panel) 8px);
+  cursor: default;
+}
+
+/* Gain controls */
+.gain-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.gain-row:last-child {
+  border-bottom: none;
+}
+
+.gain-row .chan-label {
+  width: 220px;
+  flex-shrink: 0;
+}
+
+.gain-row .chan-label .device {
+  color: var(--text-dim);
+  font-size: 12px;
+}
+
+.gain-row input[type="range"] {
+  flex: 1;
+}
+
+.gain-row input[type="number"] {
+  width: 70px;
+  background: var(--panel-alt);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: var(--radius);
+  padding: 4px 6px;
+}
+
+.unsupported {
+  color: var(--text-dim);
+  font-size: 12px;
+  font-style: italic;
+}
+
+/* Metering */
+.meter-device {
+  margin-bottom: 12px;
+}
+
+.meter-device .head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.meter-device .head h3 {
+  margin: 0;
+  font-size: 14px;
+  flex: 1;
+}
+
+.meter-channels {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 10px;
+}
+
+.meter-channel {
+  background: var(--panel-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 10px;
+}
+
+.meter-channel .label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+}
+
+.meter-channel .bar-track {
+  height: 8px;
+  background: var(--panel);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.meter-channel .bar-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--good), var(--warn) 80%, var(--bad));
+  transition: width 80ms linear;
+}
+
+section.tx, section.rx {
+  margin-bottom: 6px;
+}
+
+section.tx h4, section.rx h4 {
+  margin: 4px 0;
+  color: var(--text-dim);
+  font-size: 11px;
+  text-transform: uppercase;
+}
