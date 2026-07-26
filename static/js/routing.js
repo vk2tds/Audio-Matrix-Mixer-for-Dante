@@ -2,8 +2,73 @@ const txCollapsed = new Set();
 const rxCollapsed = new Set();
 let txFilter = "";
 let rxFilter = "";
+
+// Recording: "live" applies every click for real as it happens; "plan" only
+// ever touches this local bookkeeping, never the network. Either way,
+// recordedActions is the list that gets saved as a preset. recordingBaseline
+// remembers what a row's real subscription was before it was first touched
+// this session, so a click that returns a row to that state can be told
+// apart from a genuine change.
 let recording = false;
+let recordingMode = null; // "live" | "plan" | null
+const recordingBaseline = new Map(); // rowKey -> {device,name,friendlyName,deviceLabelText} | null
 const recordedActions = [];
+
+function rowKey(rxDeviceKeyStr, rxNumber) {
+  return `${rxDeviceKeyStr}|${rxNumber}`;
+}
+
+function getActiveSubForRow(rxDevice, rxChannelName) {
+  const sub = (rxDevice.subscriptions || []).find((s) => s.rx_channel === rxChannelName && s.tx_device);
+  if (!sub) return null;
+  return {
+    device: sub.tx_device,
+    name: sub.tx_channel,
+    friendlyName: sub.tx_channel,
+    deviceLabelText: sub.tx_device,
+  };
+}
+
+function findRowAction(rk) {
+  return recordedActions.find((a) => rowKey(a.rx_device, a.rx_channel) === rk);
+}
+
+function setRowAction(rk, action) {
+  const idx = recordedActions.findIndex((a) => rowKey(a.rx_device, a.rx_channel) === rk);
+  if (idx !== -1) recordedActions.splice(idx, 1);
+  recordedActions.push(action);
+  renderRecordPanel();
+}
+
+function clearRowAction(rk) {
+  const idx = recordedActions.findIndex((a) => rowKey(a.rx_device, a.rx_channel) === rk);
+  if (idx !== -1) recordedActions.splice(idx, 1);
+  renderRecordPanel();
+}
+
+// The row's current state as far as recording is concerned: an in-progress
+// action, or the remembered baseline if the row's been touched and clicked
+// back to it, or (row untouched) whatever the live data actually says.
+function getEffectiveActive(rx) {
+  const rk = rowKey(deviceKey(rx.device), rx.number);
+  if (recording) {
+    const action = findRowAction(rk);
+    if (action) {
+      return action.action === "add"
+        ? {
+            device: action.tx_device,
+            name: action.tx_channel,
+            friendlyName: action.tx_channel_label,
+            deviceLabelText: action.tx_device_label,
+          }
+        : null;
+    }
+    if (recordingBaseline.has(rk)) {
+      return recordingBaseline.get(rk);
+    }
+  }
+  return getActiveSubForRow(rx.device, rx.name);
+}
 
 function buildGroups(devices, kind) {
   const groups = [];
@@ -53,51 +118,142 @@ function findSubscription(rxDevice, rxChannelName, txDeviceName, txChannelName) 
   );
 }
 
-function buildAction(actionType, rx, tx) {
-  return {
-    action: actionType,
-    rx_device: deviceKey(rx.device),
-    rx_device_label: deviceLabel(rx.device),
-    rx_channel: rx.number,
-    rx_channel_label: rx.friendlyName,
-    tx_device: tx ? deviceKey(tx.device) : null,
-    tx_device_label: tx ? deviceLabel(tx.device) : null,
-    tx_channel: tx ? tx.name : null,
-    tx_channel_label: tx ? tx.friendlyName : null,
-  };
-}
-
-function addRecordedAction(action) {
-  const idx = recordedActions.findIndex(
-    (a) => a.rx_device === action.rx_device && a.rx_channel === action.rx_channel
-  );
-  if (idx !== -1) recordedActions.splice(idx, 1);
-  recordedActions.push(action);
-  renderRecordPanel();
-}
-
-async function toggleRoute(td, rx, tx, active) {
-  td.classList.add("pending");
-  try {
-    if (active) {
+// The one place that actually changes anything (or, in plan mode,
+// deliberately doesn't). Shared by the matrix and the compact/mobile view
+// so neither can bypass recording's rules.
+async function applyDesiredForRow(rx, desired) {
+  if (!recording) {
+    if (desired === null) {
       await api("POST", "/api/unsubscribe", { rx_device: deviceKey(rx.device), rx_channel: rx.number });
       showToast(`Unsubscribed ${deviceLabel(rx.device)} · ${rx.friendlyName}`);
-      if (recording) addRecordedAction(buildAction("remove", rx, tx));
     } else {
       await api("POST", "/api/subscribe", {
         rx_device: deviceKey(rx.device),
         rx_channel: rx.number,
-        tx_channel: tx.name,
-        tx_device: deviceKey(tx.device),
+        tx_channel: desired.name,
+        tx_device: desired.device,
       });
-      showToast(`Routed ${deviceLabel(tx.device)} · ${tx.friendlyName} → ${deviceLabel(rx.device)} · ${rx.friendlyName}`);
-      if (recording) addRecordedAction(buildAction("add", rx, tx));
+      showToast(`Routed ${desired.deviceLabelText} · ${desired.friendlyName} → ${deviceLabel(rx.device)} · ${rx.friendlyName}`);
     }
+    return;
+  }
+
+  const rk = rowKey(deviceKey(rx.device), rx.number);
+  if (!recordingBaseline.has(rk)) {
+    recordingBaseline.set(rk, getEffectiveActive(rx));
+  }
+  const baseline = recordingBaseline.get(rk);
+
+  const matchesBaseline =
+    (desired === null && baseline === null) ||
+    Boolean(desired && baseline && desired.device === baseline.device && desired.name === baseline.name);
+
+  if (recordingMode === "live") {
+    if (desired === null) {
+      await api("POST", "/api/unsubscribe", { rx_device: deviceKey(rx.device), rx_channel: rx.number });
+    } else {
+      await api("POST", "/api/subscribe", {
+        rx_device: deviceKey(rx.device),
+        rx_channel: rx.number,
+        tx_channel: desired.name,
+        tx_device: desired.device,
+      });
+    }
+  }
+
+  if (matchesBaseline) {
+    clearRowAction(rk);
+  } else if (desired === null) {
+    setRowAction(rk, {
+      action: "remove",
+      rx_device: deviceKey(rx.device),
+      rx_device_label: deviceLabel(rx.device),
+      rx_channel: rx.number,
+      rx_channel_label: rx.friendlyName,
+      tx_device: baseline.device,
+      tx_device_label: baseline.deviceLabelText,
+      tx_channel: baseline.name,
+      tx_channel_label: baseline.friendlyName,
+    });
+  } else {
+    setRowAction(rk, {
+      action: "add",
+      rx_device: deviceKey(rx.device),
+      rx_device_label: deviceLabel(rx.device),
+      rx_channel: rx.number,
+      rx_channel_label: rx.friendlyName,
+      tx_device: desired.device,
+      tx_device_label: desired.deviceLabelText,
+      tx_channel: desired.name,
+      tx_channel_label: desired.friendlyName,
+    });
+  }
+}
+
+async function onCellClick(td, rx, tx) {
+  const activeNow = getEffectiveActive(rx);
+  const clickedIsActive = Boolean(activeNow && activeNow.device === deviceKey(tx.device) && activeNow.name === tx.name);
+  const desired = clickedIsActive
+    ? null
+    : {
+        device: deviceKey(tx.device),
+        name: tx.name,
+        friendlyName: tx.friendlyName,
+        deviceLabelText: deviceLabel(tx.device),
+      };
+
+  td.classList.add("pending");
+  try {
+    await applyDesiredForRow(rx, desired);
   } catch (err) {
     showToast(err.message, true);
   } finally {
     td.classList.remove("pending");
   }
+
+  renderMatrix(DanteStore.getDevices());
+  renderCompactView(DanteStore.getDevices());
+}
+
+async function restoreBaselineViaApi(action) {
+  if (recordingMode !== "live") return;
+  const rk = rowKey(action.rx_device, action.rx_channel);
+  const baseline = recordingBaseline.get(rk);
+  try {
+    if (!baseline) {
+      await api("POST", "/api/unsubscribe", { rx_device: action.rx_device, rx_channel: action.rx_channel });
+    } else {
+      await api("POST", "/api/subscribe", {
+        rx_device: action.rx_device,
+        rx_channel: action.rx_channel,
+        tx_channel: baseline.name,
+        tx_device: baseline.device,
+      });
+    }
+  } catch (err) {
+    showToast(err.message, true);
+  }
+}
+
+async function revertSingleAction(action) {
+  await restoreBaselineViaApi(action);
+  const idx = recordedActions.indexOf(action);
+  if (idx !== -1) recordedActions.splice(idx, 1);
+  renderRecordPanel();
+  renderMatrix(DanteStore.getDevices());
+  renderCompactView(DanteStore.getDevices());
+}
+
+async function discardAllRecorded() {
+  const actionsToRevert = recordedActions.slice();
+  for (const action of actionsToRevert) {
+    await restoreBaselineViaApi(action);
+  }
+  recordedActions.length = 0;
+  recordingBaseline.clear();
+  renderRecordPanel();
+  renderMatrix(DanteStore.getDevices());
+  renderCompactView(DanteStore.getDevices());
 }
 
 function makeToggle(collapsed) {
@@ -199,6 +355,11 @@ function renderMatrix(devices) {
       rowTh.textContent = ch.friendlyName;
       tr.appendChild(rowTh);
 
+      const rx = { device: g.device, number: ch.number, name: ch.name, friendlyName: ch.friendlyName };
+      const rk = rowKey(deviceKey(rx.device), rx.number);
+      const rowAction = recording ? findRowAction(rk) : undefined;
+      const effectiveActive = recording && !rowAction ? getEffectiveActive(rx) : null;
+
       for (const col of txColumns) {
         const td = document.createElement("td");
         if (col.isLabel) {
@@ -206,13 +367,23 @@ function renderMatrix(devices) {
           tr.appendChild(td);
           continue;
         }
-        const sub = findSubscription(g.device, ch.name, deviceKey(col.device), col.channel.name);
-        const active = Boolean(sub);
-        td.classList.toggle("active", active);
-        td.title = `${deviceLabel(col.device)} ${col.channel.friendlyName} → ${deviceLabel(g.device)} ${ch.friendlyName}`;
-        const rx = { device: g.device, number: ch.number, name: ch.name, friendlyName: ch.friendlyName };
+
         const tx = { device: col.device, name: col.channel.name, friendlyName: col.channel.friendlyName };
-        td.addEventListener("click", () => toggleRoute(td, rx, tx, active));
+        const txKeyStr = deviceKey(tx.device);
+
+        if (rowAction) {
+          if (rowAction.tx_device === txKeyStr && rowAction.tx_channel === tx.name) {
+            td.classList.add(rowAction.action === "add" ? "recording-add" : "recording-remove");
+          }
+        } else if (effectiveActive) {
+          td.classList.toggle("active", effectiveActive.device === txKeyStr && effectiveActive.name === tx.name);
+        } else {
+          const sub = findSubscription(g.device, ch.name, txKeyStr, tx.name);
+          td.classList.toggle("active", Boolean(sub));
+        }
+
+        td.title = `${deviceLabel(col.device)} ${col.channel.friendlyName} → ${deviceLabel(g.device)} ${ch.friendlyName}`;
+        td.addEventListener("click", () => onCellClick(td, rx, tx));
         tr.appendChild(td);
       }
       tbody.appendChild(tr);
@@ -229,25 +400,24 @@ function renderMatrix(devices) {
 
 async function onCompactChange(select, rx) {
   select.disabled = true;
+
+  let desired = null;
+  if (select.value !== "") {
+    const [device, name] = select.value.split("|");
+    const opt = select.options[select.selectedIndex];
+    desired = { device, name, friendlyName: opt ? opt.textContent : name, deviceLabelText: device };
+  }
+
   try {
-    if (select.value === "") {
-      await api("POST", "/api/unsubscribe", { rx_device: deviceKey(rx.device), rx_channel: rx.number });
-      showToast(`Unsubscribed ${deviceLabel(rx.device)} · ${rx.friendlyName}`);
-    } else {
-      const [txDeviceKeyVal, txChannelName] = select.value.split("|");
-      await api("POST", "/api/subscribe", {
-        rx_device: deviceKey(rx.device),
-        rx_channel: rx.number,
-        tx_channel: txChannelName,
-        tx_device: txDeviceKeyVal,
-      });
-      showToast(`Routed → ${deviceLabel(rx.device)} · ${rx.friendlyName}`);
-    }
+    await applyDesiredForRow(rx, desired);
   } catch (err) {
     showToast(err.message, true);
   } finally {
     select.disabled = false;
   }
+
+  renderMatrix(DanteStore.getDevices());
+  renderCompactView(DanteStore.getDevices());
 }
 
 function renderCompactView(devices) {
@@ -271,12 +441,22 @@ function renderCompactView(devices) {
     section.appendChild(h3);
 
     for (const ch of g.channels) {
-      const currentSub = (g.device.subscriptions || []).find((s) => s.rx_channel === ch.name);
+      const rx = { device: g.device, number: ch.number, name: ch.name, friendlyName: ch.friendlyName };
+      const rk = rowKey(deviceKey(rx.device), rx.number);
+      const rowAction = recording ? findRowAction(rk) : undefined;
+      const effective = rowAction
+        ? rowAction.action === "add"
+          ? { device: rowAction.tx_device, name: rowAction.tx_channel }
+          : null
+        : getEffectiveActive(rx);
 
       const row = document.createElement("div");
       row.className = "compact-row";
       const label = document.createElement("label");
       label.textContent = ch.friendlyName;
+      if (rowAction) {
+        label.classList.add(rowAction.action === "add" ? "recording-add-text" : "recording-remove-text");
+      }
       row.appendChild(label);
 
       const select = document.createElement("select");
@@ -292,7 +472,7 @@ function renderCompactView(devices) {
           const opt = document.createElement("option");
           opt.value = `${deviceKey(txg.device)}|${txch.name}`;
           opt.textContent = txch.friendlyName;
-          if (currentSub && currentSub.tx_device === deviceKey(txg.device) && currentSub.tx_channel === txch.name) {
+          if (effective && effective.device === deviceKey(txg.device) && effective.name === txch.name) {
             opt.selected = true;
           }
           optgroup.appendChild(opt);
@@ -300,7 +480,6 @@ function renderCompactView(devices) {
         select.appendChild(optgroup);
       }
 
-      const rx = { device: g.device, number: ch.number, name: ch.name, friendlyName: ch.friendlyName };
       select.addEventListener("change", () => onCompactChange(select, rx));
       row.appendChild(select);
       section.appendChild(row);
@@ -327,11 +506,7 @@ function renderRecordPanel() {
     const removeBtn = document.createElement("button");
     removeBtn.textContent = "×";
     removeBtn.title = "Remove from recording";
-    removeBtn.addEventListener("click", () => {
-      const idx = recordedActions.indexOf(action);
-      if (idx !== -1) recordedActions.splice(idx, 1);
-      renderRecordPanel();
-    });
+    removeBtn.addEventListener("click", () => revertSingleAction(action));
     li.appendChild(removeBtn);
 
     list.appendChild(li);
@@ -423,17 +598,31 @@ document.addEventListener("DOMContentLoaded", () => {
 
   DanteStore.subscribe(renderAll);
 
-  const recordToggle = document.getElementById("record-toggle");
-  recordToggle.addEventListener("click", () => {
-    recording = !recording;
-    recordToggle.textContent = recording ? "Stop recording" : "Record changes for a preset";
-    recordToggle.classList.toggle("primary", recording);
-  });
+  const liveBtn = document.getElementById("record-live-btn");
+  const planBtn = document.getElementById("record-plan-btn");
 
-  document.getElementById("record-discard-btn").addEventListener("click", () => {
-    recordedActions.length = 0;
-    renderRecordPanel();
-  });
+  function setRecordingMode(mode) {
+    if (recordingMode === mode) {
+      // turning off the currently active mode - keep the list around to review/save
+      recording = false;
+      recordingMode = null;
+    } else {
+      // starting fresh, whether from off or switching from the other mode
+      recording = true;
+      recordingMode = mode;
+      recordedActions.length = 0;
+      recordingBaseline.clear();
+      renderRecordPanel();
+    }
+    liveBtn.classList.toggle("primary", recordingMode === "live");
+    planBtn.classList.toggle("primary", recordingMode === "plan");
+    renderAll(DanteStore.getDevices());
+  }
+
+  liveBtn.addEventListener("click", () => setRecordingMode("live"));
+  planBtn.addEventListener("click", () => setRecordingMode("plan"));
+
+  document.getElementById("record-discard-btn").addEventListener("click", discardAllRecorded);
 
   document.getElementById("record-save-btn").addEventListener("click", () => {
     openSaveDialog(recordedActions.slice(), "record");
@@ -464,7 +653,9 @@ document.addEventListener("DOMContentLoaded", () => {
       closeSaveDialog();
       if (wasRecording) {
         recordedActions.length = 0;
+        recordingBaseline.clear();
         renderRecordPanel();
+        renderAll(DanteStore.getDevices());
       }
     } catch (err) {
       showToast(err.message, true);

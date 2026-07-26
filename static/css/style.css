@@ -398,6 +398,24 @@ table.matrix td.active::after {
   color: var(--accent);
 }
 
+table.matrix td.recording-add {
+  background: var(--good);
+}
+
+table.matrix td.recording-add::after {
+  content: "\25CF";
+  color: var(--panel);
+}
+
+table.matrix td.recording-remove {
+  background: var(--bad);
+}
+
+table.matrix td.recording-remove::after {
+  content: "\25CF";
+  color: var(--panel);
+}
+
 table.matrix td.pending::after {
   content: "\22EF";
   color: var(--warn);
@@ -693,6 +711,16 @@ section.tx h4, section.rx h4 {
   width: 90px;
   flex-shrink: 0;
   font-size: 13px;
+}
+
+.compact-row label.recording-add-text {
+  color: var(--good);
+  font-weight: 600;
+}
+
+.compact-row label.recording-remove-text {
+  color: var(--bad);
+  font-weight: 600;
 }
 
 .compact-row select {

@@ -2,13 +2,14 @@
 {% block title %}Routing – Dante Web{% endblock %}
 {% block content %}
 <div class="panel">
-  <div class="hint">Click a cell to route that transmit channel (column) to a receive channel (row). Click an active cell to unsubscribe it. Each receive channel can only take one source at a time. Click a device's name to collapse or expand its channels.</div>
+  <div class="hint">Click a cell to route that transmit channel (column) to a receive channel (row). Click an active cell to unsubscribe it. Each receive channel can only take one source at a time. Click a device's name to collapse or expand its channels. While Live/Recording or Plan/Recording is on, new connections show green and removed ones show red until you stop; click a highlighted cell again to undo it back to blank.</div>
   <div class="matrix-toolbar">
     <input type="text" id="filter-tx" placeholder="Filter transmitters…">
     <input type="text" id="filter-rx" placeholder="Filter receivers…">
   </div>
   <div class="preset-toolbar">
-    <button type="button" id="record-toggle">Record changes for a preset</button>
+    <button type="button" id="record-live-btn">Live/Recording</button>
+    <button type="button" id="record-plan-btn">Plan/Recording</button>
     <button type="button" id="save-matrix-btn">Save current matrix as preset…</button>
   </div>
   <div class="matrix-wrap" id="matrix-wrap">
@@ -20,7 +21,7 @@
 </div>
 
 <div class="panel" id="record-panel" style="display: none;">
-  <div class="hint">Recording — only these changes will be applied when this preset is used later.</div>
+  <div class="hint">Recorded changes. In Live/Recording these are already applied on the network; in Plan/Recording nothing has actually changed yet — either way, this list is what gets saved as a preset.</div>
   <ul class="preset-action-list" id="record-list"></ul>
   <div class="button-row">
     <button type="button" id="record-save-btn" class="primary">Save as preset…</button>
