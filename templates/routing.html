@@ -2,7 +2,7 @@
 {% block title %}Routing – Dante Web{% endblock %}
 {% block content %}
 <div class="panel">
-  <div class="hint">Click a cell to route that transmit channel (column) to a receive channel (row). Click an active cell to unsubscribe it. Each receive channel can only take one source at a time. Click a device's name to collapse or expand its channels. While Live/Recording or Plan/Recording is on, new connections show green and removed ones show red until you stop; click a highlighted cell again to undo it back to blank.</div>
+  <div class="hint">Click a cell to route that transmit channel (column) to a receive channel (row). Click an active cell to unsubscribe it. Each receive channel can only take one source at a time. Click a device's name to collapse or expand its channels. While Live/Recording or Plan/Recording is on, new connections show green and removed ones show red until you stop; click a highlighted cell again to undo it back to blank. Click a row's channel label (not a specific cell) to explicitly record "remove whatever's here" even if nothing's connected right now — useful when building a preset meant to clear a channel that another preset might occupy.</div>
   <div class="matrix-toolbar">
     <input type="text" id="filter-tx" placeholder="Filter transmitters…">
     <input type="text" id="filter-rx" placeholder="Filter receivers…">

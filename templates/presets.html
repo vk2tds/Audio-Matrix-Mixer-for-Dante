@@ -5,10 +5,17 @@
   <div class="hint">
     Saved routing presets. Applying a preset only touches the channels it lists — everything else is left alone.
     Build presets from the <a href="/routing">Routing</a> page: record specific changes, or save the whole current matrix.
+    Check two or more here to combine them into a new preset — check them in the order you want conflicts resolved
+    (if two presets touch the same channel, whichever you checked later wins).
+  </div>
+  <div class="button-row" id="combine-toolbar" style="display: none;">
+    <button type="button" id="combine-btn" class="primary">Combine 0 selected into new preset…</button>
+    <button type="button" id="combine-clear-btn">Clear selection</button>
   </div>
   <table id="presets-table">
     <thead>
       <tr>
+        <th></th>
         <th>Name</th>
         <th>Actions</th>
         <th>Updated</th>
@@ -16,7 +23,7 @@
       </tr>
     </thead>
     <tbody id="presets-rows">
-      <tr><td class="empty" colspan="4">Loading…</td></tr>
+      <tr><td class="empty" colspan="5">Loading…</td></tr>
     </tbody>
   </table>
 </div>

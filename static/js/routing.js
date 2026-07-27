@@ -215,6 +215,54 @@ async function onCellClick(td, rx, tx) {
   renderCompactView(DanteStore.getDevices());
 }
 
+// Explicitly record "remove whatever's on this channel" — click the row's
+// label (not a specific cell) while recording. Unlike clicking a cell,
+// this always records a remove, even when the row shows no connection
+// right now: useful when this preset is meant to clear a channel that
+// only ends up occupied because of a *different* preset applied with it.
+// Click the label again to undo it.
+async function toggleRowRemoval(rx) {
+  if (!recording) return;
+
+  const rk = rowKey(deviceKey(rx.device), rx.number);
+  const existing = findRowAction(rk);
+
+  if (existing && existing.action === "remove") {
+    clearRowAction(rk);
+    renderMatrix(DanteStore.getDevices());
+    renderCompactView(DanteStore.getDevices());
+    return;
+  }
+
+  if (!recordingBaseline.has(rk)) {
+    recordingBaseline.set(rk, getEffectiveActive(rx));
+  }
+  const baseline = recordingBaseline.get(rk);
+
+  try {
+    if (recordingMode === "live") {
+      await api("POST", "/api/unsubscribe", { rx_device: deviceKey(rx.device), rx_channel: rx.number });
+    }
+  } catch (err) {
+    showToast(err.message, true);
+  }
+
+  setRowAction(rk, {
+    action: "remove",
+    rx_device: deviceKey(rx.device),
+    rx_device_label: deviceLabel(rx.device),
+    rx_channel: rx.number,
+    rx_channel_label: rx.friendlyName,
+    tx_device: baseline ? baseline.device : null,
+    tx_device_label: baseline ? baseline.deviceLabelText : null,
+    tx_channel: baseline ? baseline.name : null,
+    tx_channel_label: baseline ? baseline.friendlyName : null,
+  });
+
+  renderMatrix(DanteStore.getDevices());
+  renderCompactView(DanteStore.getDevices());
+}
+
 async function restoreBaselineViaApi(action) {
   if (recordingMode !== "live") return;
   const rk = rowKey(action.rx_device, action.rx_channel);
@@ -359,6 +407,15 @@ function renderMatrix(devices) {
       const rk = rowKey(deviceKey(rx.device), rx.number);
       const rowAction = recording ? findRowAction(rk) : undefined;
       const effectiveActive = recording && !rowAction ? getEffectiveActive(rx) : null;
+
+      if (rowAction && rowAction.action === "remove") {
+        rowTh.classList.add("recording-remove-row");
+      }
+      if (recording) {
+        rowTh.classList.add("row-removable");
+        rowTh.title = "Click to mark this channel for removal, even if nothing's connected here right now";
+        rowTh.addEventListener("click", () => toggleRowRemoval(rx));
+      }
 
       for (const col of txColumns) {
         const td = document.createElement("td");

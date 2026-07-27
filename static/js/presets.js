@@ -3,24 +3,80 @@ function formatUpdated(epochSeconds) {
   return new Date(epochSeconds * 1000).toLocaleString();
 }
 
+// Order matters: when combining, a later-selected preset's action for a
+// given channel overrides an earlier one's, same as applying them in that
+// order would. Tracked separately from checkbox DOM state so re-checking
+// a box always sends it to the back of the queue.
+const selectedOrder = [];
+
+function updateCombineToolbar() {
+  const toolbar = document.getElementById("combine-toolbar");
+  const btn = document.getElementById("combine-btn");
+  toolbar.style.display = selectedOrder.length > 0 ? "flex" : "none";
+  btn.textContent = `Combine ${selectedOrder.length} selected into new preset…`;
+  btn.disabled = selectedOrder.length < 2;
+}
+
+async function combineSelected() {
+  if (selectedOrder.length < 2) return;
+  const name = prompt("Name for the combined preset:", "");
+  if (!name || !name.trim()) return;
+
+  const merged = new Map();
+  try {
+    for (const id of selectedOrder) {
+      const detail = await api("GET", `/api/presets/${id}`);
+      for (const action of detail.actions) {
+        merged.set(`${action.rx_device}|${action.rx_channel}`, action);
+      }
+    }
+    await api("POST", "/api/presets", { name: name.trim(), actions: [...merged.values()] });
+    showToast(`Created "${name.trim()}" from ${selectedOrder.length} presets`);
+  } catch (err) {
+    showToast(err.message, true);
+    return;
+  }
+
+  selectedOrder.length = 0;
+  loadPresets();
+}
+
 async function loadPresets() {
   const tbody = document.getElementById("presets-rows");
   let presets;
   try {
     presets = await api("GET", "/api/presets");
   } catch (err) {
-    tbody.innerHTML = `<tr><td class="empty" colspan="4">${err.message}</td></tr>`;
+    tbody.innerHTML = `<tr><td class="empty" colspan="5">${err.message}</td></tr>`;
     return;
   }
 
+  updateCombineToolbar();
+
   if (presets.length === 0) {
-    tbody.innerHTML = '<tr><td class="empty" colspan="4">No presets saved yet.</td></tr>';
+    tbody.innerHTML = '<tr><td class="empty" colspan="5">No presets saved yet.</td></tr>';
     return;
   }
 
   tbody.innerHTML = "";
   for (const preset of presets) {
     const tr = document.createElement("tr");
+
+    const checkTd = document.createElement("td");
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.checked = selectedOrder.includes(preset.id);
+    checkbox.addEventListener("change", () => {
+      const idx = selectedOrder.indexOf(preset.id);
+      if (checkbox.checked) {
+        if (idx === -1) selectedOrder.push(preset.id);
+      } else if (idx !== -1) {
+        selectedOrder.splice(idx, 1);
+      }
+      updateCombineToolbar();
+    });
+    checkTd.appendChild(checkbox);
+    tr.appendChild(checkTd);
 
     const nameTd = document.createElement("td");
     nameTd.textContent = preset.name;
@@ -119,7 +175,7 @@ async function toggleDetail(afterRow, presetId) {
   const tr = document.createElement("tr");
   tr.className = "preset-detail-row";
   const td = document.createElement("td");
-  td.colSpan = 4;
+  td.colSpan = 5;
   const list = document.createElement("ul");
   list.className = "preset-action-list";
   for (const action of detail.actions) {
@@ -133,4 +189,11 @@ async function toggleDetail(afterRow, presetId) {
   afterRow.parentNode.insertBefore(tr, afterRow.nextSibling);
 }
 
-document.addEventListener("DOMContentLoaded", loadPresets);
+document.addEventListener("DOMContentLoaded", () => {
+  loadPresets();
+  document.getElementById("combine-btn").addEventListener("click", combineSelected);
+  document.getElementById("combine-clear-btn").addEventListener("click", () => {
+    selectedOrder.length = 0;
+    loadPresets();
+  });
+});

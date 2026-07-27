@@ -369,6 +369,19 @@ table.matrix tbody th {
   font-weight: 400;
 }
 
+table.matrix tbody th.row-removable {
+  cursor: pointer;
+}
+
+table.matrix tbody th.row-removable:hover {
+  color: var(--bad);
+}
+
+table.matrix tbody th.recording-remove-row {
+  background: var(--bad);
+  color: var(--panel);
+}
+
 table.matrix td.disabled {
   cursor: default;
   background: repeating-linear-gradient(45deg, var(--border), var(--border) 4px, var(--panel) 4px, var(--panel) 8px);
