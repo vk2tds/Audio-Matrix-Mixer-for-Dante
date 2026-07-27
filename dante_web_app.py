@@ -5,6 +5,7 @@ import signal
 from flask import Flask, Response, jsonify, render_template, request
 
 import activity_log
+import designs_store
 import netaudio_cli
 import netaudio_client as relay
 import presets_store
@@ -79,6 +80,11 @@ def flows_page():
 @app.route("/activity")
 def activity_page():
     return render_template("activity.html")
+
+
+@app.route("/design")
+def design_page():
+    return render_template("design.html")
 
 
 # --- API proxy ---------------------------------------------------------
@@ -261,6 +267,177 @@ def api_apply_preset(pid):
         {"preset_id": pid, "preset_name": preset["name"], "applied": applied, "total": len(results)},
         ok=applied == len(results),
         error=None if applied == len(results) else f"{len(results) - applied} action(s) failed",
+    )
+    return jsonify({"success": True, "applied": applied, "total": len(results), "results": results})
+
+
+# --- Design mode ------------------------------------------------------------
+# Designs are virtual: their own devices/channels (which may or may not exist
+# for real), a base connection list, and named presets. Nothing touches real
+# hardware until /apply, which resolves each design device to a live one by
+# name (or by the server_name it was imported from) and only acts on
+# connections that fully resolve.
+
+
+@app.route("/api/designs")
+def api_list_designs():
+    return jsonify(designs_store.list_designs())
+
+
+@app.route("/api/designs/<did>")
+def api_get_design(did):
+    design = designs_store.get_design(did)
+    if design is None:
+        return jsonify({"error": "design not found"}), 404
+    return jsonify(design)
+
+
+@app.route("/api/designs", methods=["POST"])
+def api_save_design():
+    body = request.get_json(force=True, silent=True) or {}
+    name = (body.get("name") or "").strip()
+    if not name:
+        return jsonify({"error": "name is required"}), 400
+    did = designs_store.save_design(
+        body.get("id"),
+        name,
+        body.get("devices") or {},
+        body.get("connections") or [],
+        body.get("presets") or {},
+    )
+    return jsonify({"success": True, "id": did})
+
+
+@app.route("/api/designs/<did>", methods=["DELETE"])
+def api_delete_design(did):
+    designs_store.delete_design(did)
+    return jsonify({"success": True})
+
+
+def _resolve_live_device(design_device, live_by_name, live_by_server):
+    if not design_device:
+        return None
+    imported_from = design_device.get("imported_from")
+    if imported_from and imported_from in live_by_server:
+        return live_by_server[imported_from]
+    name = (design_device.get("name") or "").strip().lower()
+    return live_by_name.get(name)
+
+
+def _resolve_channel_name(live_device, channel_type, channel_number):
+    channels = (live_device.get("channels") or {}).get(channel_type) or {}
+    chan = channels.get(str(channel_number))
+    if not chan:
+        return None
+    return chan.get("name")
+
+
+def _live_device_key(live_device):
+    return live_device.get("server_name") or live_device.get("name")
+
+
+def _apply_design_actions(design, actions):
+    live_devices, status = relay.get_devices()
+    if status >= 400 or not isinstance(live_devices, dict):
+        return None, "could not read live devices from the daemon"
+
+    live_by_name = {}
+    live_by_server = {}
+    for server_name, dev in live_devices.items():
+        live_by_server[server_name] = dev
+        if dev.get("name"):
+            live_by_name[dev["name"].strip().lower()] = dev
+
+    devices = design.get("devices") or {}
+    results = []
+
+    for action in actions:
+        rx_design = devices.get(action.get("rx_device"))
+        tx_design = devices.get(action.get("tx_device")) if action.get("tx_device") else None
+        rx_live = _resolve_live_device(rx_design, live_by_name, live_by_server)
+        tx_live = _resolve_live_device(tx_design, live_by_name, live_by_server) if tx_design else None
+
+        entry = {
+            "action": action.get("action", "add"),
+            "rx_device_label": (rx_design or {}).get("name", action.get("rx_device")),
+            "rx_channel": action.get("rx_channel"),
+            "tx_device_label": (tx_design or {}).get("name") if tx_design else None,
+            "tx_channel": action.get("tx_channel"),
+        }
+
+        if not rx_design or not rx_live:
+            entry.update(ok=False, error="receive device not found on the live network")
+            results.append(entry)
+            continue
+
+        rx_channel_name = _resolve_channel_name(rx_live, "receivers", action.get("rx_channel"))
+        if not rx_channel_name:
+            entry.update(ok=False, error="receive channel not found on the live device")
+            results.append(entry)
+            continue
+
+        if action.get("action") == "remove" or not tx_design:
+            try:
+                data, resp_status = relay.unsubscribe(_live_device_key(rx_live), action.get("rx_channel"))
+                entry.update(ok=resp_status < 400, error=None if resp_status < 400 else data.get("error"))
+            except relay.RelayError as exc:
+                entry.update(ok=False, error=str(exc))
+            results.append(entry)
+            continue
+
+        if not tx_live:
+            entry.update(ok=False, error="transmit device not found on the live network")
+            results.append(entry)
+            continue
+
+        tx_channel_name = _resolve_channel_name(tx_live, "transmitters", action.get("tx_channel"))
+        if not tx_channel_name:
+            entry.update(ok=False, error="transmit channel not found on the live device")
+            results.append(entry)
+            continue
+
+        try:
+            data, resp_status = relay.subscribe(
+                _live_device_key(rx_live), action.get("rx_channel"), tx_channel_name, _live_device_key(tx_live)
+            )
+            entry.update(ok=resp_status < 400, error=None if resp_status < 400 else data.get("error"))
+        except relay.RelayError as exc:
+            entry.update(ok=False, error=str(exc))
+        results.append(entry)
+
+    return results, None
+
+
+@app.route("/api/designs/<did>/apply", methods=["POST"])
+def api_apply_design(did):
+    design = designs_store.get_design(did)
+    if design is None:
+        return jsonify({"error": "design not found"}), 404
+
+    body = request.get_json(force=True, silent=True) or {}
+    preset_id = body.get("preset_id")
+
+    if preset_id:
+        preset = (design.get("presets") or {}).get(preset_id)
+        if preset is None:
+            return jsonify({"error": "design preset not found"}), 404
+        actions = preset["actions"]
+        source_label = f"design '{design['name']}' preset '{preset['name']}'"
+    else:
+        actions = [{**c, "action": "add"} for c in design.get("connections") or []]
+        source_label = f"design '{design['name']}' base connections"
+
+    results, error = _apply_design_actions(design, actions)
+    if error:
+        activity_log.log_event("design:apply", {"design_id": did, "source": source_label}, ok=False, error=error)
+        return jsonify({"error": error}), 502
+
+    applied = sum(1 for r in results if r["ok"])
+    activity_log.log_event(
+        "design:apply",
+        {"design_id": did, "source": source_label, "applied": applied, "total": len(results)},
+        ok=applied == len(results),
+        error=None if applied == len(results) else f"{len(results) - applied} action(s) failed or unresolved",
     )
     return jsonify({"success": True, "applied": applied, "total": len(results), "results": results})
 

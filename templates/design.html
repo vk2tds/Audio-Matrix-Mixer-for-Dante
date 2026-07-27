@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Design – Dante Web{% endblock %}
+{% block content %}
+
+<div class="panel">
+  <div class="hint">
+    Design mode: build a virtual Dante network offline — import real device/channel names, or invent devices that
+    don't exist yet. Nothing here touches real hardware until you explicitly apply a design's connections or a
+    design preset.
+  </div>
+  <div class="design-selector-row">
+    <select id="design-select">
+      <option value="">— select a design —</option>
+    </select>
+    <button type="button" id="design-new-btn">New design</button>
+    <button type="button" id="design-rename-btn">Rename</button>
+    <button type="button" id="design-delete-btn">Delete</button>
+  </div>
+</div>
+
+<div id="design-editor" style="display: none;">
+
+  <div class="panel">
+    <div class="hint-row">
+      <div class="hint">Devices in this design.</div>
+      <div class="hint-row-buttons">
+        <button type="button" id="import-live-btn">Import from live…</button>
+        <button type="button" id="add-device-btn">Add device…</button>
+      </div>
+    </div>
+    <div id="design-devices-list"></div>
+  </div>
+
+  <div class="panel">
+    <div class="hint">Base connections for this design. Click a cell to connect; click again to disconnect. Saved automatically.</div>
+    <div class="matrix-wrap" id="design-matrix-wrap"></div>
+    <div class="button-row">
+      <button type="button" id="apply-base-btn" class="primary">Apply base connections to live hardware…</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="hint">Presets within this design — alternate connection layouts you can load back into the design, or push straight to live hardware.</div>
+    <div class="button-row">
+      <button type="button" id="save-design-preset-btn">Save current connections as preset…</button>
+    </div>
+    <table id="design-presets-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Actions</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="design-presets-rows">
+        <tr><td class="empty" colspan="3">No presets saved yet.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<div class="panel" id="import-picker" style="display: none;">
+  <div class="hint">Pick live devices to import (name + channel structure copied in; already-imported devices are skipped).</div>
+  <div id="import-picker-list"></div>
+  <div class="button-row">
+    <button type="button" id="import-picker-confirm-btn" class="primary">Import selected</button>
+    <button type="button" id="import-picker-cancel-btn">Cancel</button>
+  </div>
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/design.js') }}"></script>
+{% endblock %}

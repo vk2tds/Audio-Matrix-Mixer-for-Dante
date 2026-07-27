@@ -747,9 +747,12 @@ section.tx h4, section.rx h4 {
 }
 
 @media (max-width: 700px) {
+  /* #matrix-wrap (not the shared .matrix-wrap class) — the Design page
+     uses that same class for its own matrix and has no compact-view
+     fallback to switch to, so hiding by class would just blank it. */
   .matrix-toolbar,
   .preset-toolbar,
-  .matrix-wrap {
+  #matrix-wrap {
     display: none;
   }
 
@@ -810,4 +813,38 @@ section.tx h4, section.rx h4 {
   color: var(--text-dim);
   max-width: 420px;
   word-break: break-word;
+}
+
+/* Design mode */
+.design-selector-row {
+  display: flex;
+  gap: 8px;
+}
+
+.design-selector-row select {
+  flex: 1;
+  background: var(--panel-alt);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: var(--radius);
+  padding: 6px 10px;
+  font-size: 13px;
+}
+
+.design-channel-section {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.design-channel-section .config-row input {
+  max-width: 160px;
+}
+
+table.matrix th.group-col-span {
+  background: var(--panel-alt);
+  font-weight: 600;
+  border-bottom: 1px solid var(--border);
+  height: auto;
+  padding: 6px 4px;
 }
