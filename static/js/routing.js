@@ -118,6 +118,15 @@ function findSubscription(rxDevice, rxChannelName, txDeviceName, txChannelName) 
   );
 }
 
+function buildTxRef(tx) {
+  return {
+    device: deviceKey(tx.device),
+    name: tx.name,
+    friendlyName: tx.friendlyName,
+    deviceLabelText: deviceLabel(tx.device),
+  };
+}
+
 // The one place that actually changes anything (or, in plan mode,
 // deliberately doesn't). Shared by the matrix and the compact/mobile view
 // so neither can bypass recording's rules.
@@ -190,25 +199,95 @@ async function applyDesiredForRow(rx, desired) {
   }
 }
 
+// Not recording: a plain two-state toggle on live data, unchanged from
+// before recording existed.
 async function onCellClick(td, rx, tx) {
-  const activeNow = getEffectiveActive(rx);
-  const clickedIsActive = Boolean(activeNow && activeNow.device === deviceKey(tx.device) && activeNow.name === tx.name);
-  const desired = clickedIsActive
-    ? null
-    : {
-        device: deviceKey(tx.device),
-        name: tx.name,
-        friendlyName: tx.friendlyName,
-        deviceLabelText: deviceLabel(tx.device),
-      };
+  if (!recording) {
+    const activeNow = getActiveSubForRow(rx.device, rx.name);
+    const txKeyStr = deviceKey(tx.device);
+    const clickedIsActive = Boolean(activeNow && activeNow.device === txKeyStr && activeNow.name === tx.name);
+    td.classList.add("pending");
+    try {
+      await applyDesiredForRow(rx, clickedIsActive ? null : buildTxRef(tx));
+    } catch (err) {
+      showToast(err.message, true);
+    } finally {
+      td.classList.remove("pending");
+    }
+    renderMatrix(DanteStore.getDevices());
+    renderCompactView(DanteStore.getDevices());
+    return;
+  }
+
+  // Recording: each cell cycles blank → green → red → blank as you click
+  // it repeatedly, rather than jumping to mark a different (baseline)
+  // cell red. The one exception is the very first click on a row's real,
+  // already-connected cell — that goes straight to red, skipping green,
+  // since there's nothing to "add" there.
+  const txKeyStr = deviceKey(tx.device);
+  const txRef = buildTxRef(tx);
+  const rk = rowKey(deviceKey(rx.device), rx.number);
+
+  if (!recordingBaseline.has(rk)) {
+    recordingBaseline.set(rk, getActiveSubForRow(rx.device, rx.name));
+  }
+  const baseline = recordingBaseline.get(rk);
+  const existing = findRowAction(rk);
+  const clickedMatchesExisting = Boolean(existing && existing.tx_device === txKeyStr && existing.tx_channel === tx.name);
+  const clickedIsBaseline = Boolean(baseline && baseline.device === txKeyStr && baseline.name === tx.name);
+
+  let nextAction; // "add" | "remove" | null (null clears back to blank)
+  if (clickedMatchesExisting) {
+    nextAction = existing.action === "add" ? "remove" : null;
+  } else if (!existing && clickedIsBaseline) {
+    nextAction = "remove";
+  } else {
+    nextAction = "add";
+  }
 
   td.classList.add("pending");
   try {
-    await applyDesiredForRow(rx, desired);
+    if (recordingMode === "live") {
+      if (nextAction === "add") {
+        await api("POST", "/api/subscribe", {
+          rx_device: deviceKey(rx.device),
+          rx_channel: rx.number,
+          tx_channel: txRef.name,
+          tx_device: txRef.device,
+        });
+      } else if (nextAction === "remove") {
+        await api("POST", "/api/unsubscribe", { rx_device: deviceKey(rx.device), rx_channel: rx.number });
+      } else if (!baseline) {
+        await api("POST", "/api/unsubscribe", { rx_device: deviceKey(rx.device), rx_channel: rx.number });
+      } else {
+        await api("POST", "/api/subscribe", {
+          rx_device: deviceKey(rx.device),
+          rx_channel: rx.number,
+          tx_channel: baseline.name,
+          tx_device: baseline.device,
+        });
+      }
+    }
   } catch (err) {
     showToast(err.message, true);
   } finally {
     td.classList.remove("pending");
+  }
+
+  if (nextAction === null) {
+    clearRowAction(rk);
+  } else {
+    setRowAction(rk, {
+      action: nextAction,
+      rx_device: deviceKey(rx.device),
+      rx_device_label: deviceLabel(rx.device),
+      rx_channel: rx.number,
+      rx_channel_label: rx.friendlyName,
+      tx_device: txRef.device,
+      tx_device_label: txRef.deviceLabelText,
+      tx_channel: txRef.name,
+      tx_channel_label: txRef.friendlyName,
+    });
   }
 
   renderMatrix(DanteStore.getDevices());
