@@ -3,6 +3,63 @@ function formatUpdated(epochSeconds) {
   return new Date(epochSeconds * 1000).toLocaleString();
 }
 
+async function exportAllPresets() {
+  let list;
+  try {
+    list = await api("GET", "/api/presets");
+  } catch (err) {
+    showToast(err.message, true);
+    return;
+  }
+  if (list.length === 0) {
+    showToast("No presets to export", true);
+    return;
+  }
+  const full = [];
+  for (const p of list) {
+    try {
+      const detail = await api("GET", `/api/presets/${p.id}`);
+      full.push({ name: detail.name, actions: detail.actions });
+    } catch (err) {
+      showToast(err.message, true);
+    }
+  }
+  const blob = new Blob([JSON.stringify(full, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "dante-web-presets.json";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importPresetsFromFile(file) {
+  const reader = new FileReader();
+  reader.onload = async () => {
+    let data;
+    try {
+      data = JSON.parse(reader.result);
+    } catch {
+      showToast("Invalid JSON file", true);
+      return;
+    }
+    const items = Array.isArray(data) ? data : [data];
+    let count = 0;
+    for (const item of items) {
+      if (!item || !item.name || !item.actions) continue;
+      try {
+        await api("POST", "/api/presets", { name: item.name, actions: item.actions });
+        count++;
+      } catch (err) {
+        showToast(err.message, true);
+      }
+    }
+    showToast(`Imported ${count} preset(s)`);
+    loadPresets();
+  };
+  reader.readAsText(file);
+}
+
 // Order matters: when combining, a later-selected preset's action for a
 // given channel overrides an earlier one's, same as applying them in that
 // order would. Tracked separately from checkbox DOM state so re-checking
@@ -195,5 +252,15 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("combine-clear-btn").addEventListener("click", () => {
     selectedOrder.length = 0;
     loadPresets();
+  });
+
+  document.getElementById("export-presets-btn").addEventListener("click", exportAllPresets);
+  document.getElementById("import-presets-btn").addEventListener("click", () => {
+    document.getElementById("import-presets-input").click();
+  });
+  document.getElementById("import-presets-input").addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if (file) importPresetsFromFile(file);
+    e.target.value = "";
   });
 });

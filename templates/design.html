@@ -15,6 +15,9 @@
     <button type="button" id="design-new-btn">New design</button>
     <button type="button" id="design-rename-btn">Rename</button>
     <button type="button" id="design-delete-btn">Delete</button>
+    <button type="button" id="design-export-btn">Export JSON</button>
+    <button type="button" id="design-import-btn">Import JSON…</button>
+    <input type="file" id="design-import-input" accept="application/json" style="display: none;">
   </div>
 </div>
 
@@ -32,28 +35,60 @@
   </div>
 
   <div class="panel">
-    <div class="hint">Base connections for this design. Click a cell to connect; click again to disconnect. Saved automatically.</div>
+    <div class="hint">
+      Base connections for this design. Click a cell to connect; click again to disconnect. Saved automatically.
+      While recording, cells cycle blank → green (added) → red (removed) → blank as you click them.
+    </div>
+    <div class="preset-toolbar">
+      <button type="button" id="design-record-toggle-btn">Record changes for a preset</button>
+      <button type="button" id="save-design-preset-btn">Save current connections as preset…</button>
+    </div>
     <div class="matrix-wrap" id="design-matrix-wrap"></div>
     <div class="button-row">
       <button type="button" id="apply-base-btn" class="primary">Apply base connections to live hardware…</button>
     </div>
   </div>
 
+  <div class="panel" id="design-record-panel" style="display: none;">
+    <div class="hint">Recording — only these changes will be saved when you save this as a preset.</div>
+    <ul class="preset-action-list" id="design-record-list"></ul>
+    <div class="button-row">
+      <button type="button" id="design-record-save-btn" class="primary">Save as preset…</button>
+      <button type="button" id="design-record-discard-btn">Discard recording</button>
+    </div>
+  </div>
+
+  <div class="panel" id="design-save-dialog" style="display: none;">
+    <div class="hint" id="design-save-dialog-hint">Save preset</div>
+    <div class="save-dialog-row">
+      <label for="design-save-dialog-existing">Update existing</label>
+      <select id="design-save-dialog-existing">
+        <option value="">— new preset —</option>
+      </select>
+    </div>
+    <div class="save-dialog-row">
+      <label for="design-save-dialog-name">Name</label>
+      <input type="text" id="design-save-dialog-name" placeholder="Preset name">
+    </div>
+    <div class="button-row">
+      <button type="button" id="design-save-dialog-save-btn" class="primary">Save</button>
+      <button type="button" id="design-save-dialog-cancel-btn">Cancel</button>
+    </div>
+  </div>
+
   <div class="panel">
     <div class="hint">Presets within this design — alternate connection layouts you can load back into the design, or push straight to live hardware.</div>
-    <div class="button-row">
-      <button type="button" id="save-design-preset-btn">Save current connections as preset…</button>
-    </div>
     <table id="design-presets-table">
       <thead>
         <tr>
           <th>Name</th>
           <th>Actions</th>
+          <th>Updated</th>
           <th></th>
         </tr>
       </thead>
       <tbody id="design-presets-rows">
-        <tr><td class="empty" colspan="3">No presets saved yet.</td></tr>
+        <tr><td class="empty" colspan="4">No presets saved yet.</td></tr>
       </tbody>
     </table>
   </div>

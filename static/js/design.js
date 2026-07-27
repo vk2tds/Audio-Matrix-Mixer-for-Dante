@@ -1,5 +1,37 @@
 let currentDesign = null; // {id, name, devices, connections, presets}
 
+// Recording: build up a delta (add/remove per channel) as you click the
+// matrix, same model as the real routing page, so a design can end up with
+// multiple named presets instead of only ever snapshotting the whole
+// matrix. Design mode has no "live" concept of its own — every click
+// (recording or not) just updates currentDesign.connections directly and
+// persists — recording only ADDITIONALLY tracks which rows changed and
+// their pre-recording baseline, purely for building a nameable delta.
+let designRecording = false;
+const designRecordingBaseline = new Map(); // "rxId|rxNum" -> {device,name} | null
+const designRecordedActions = [];
+
+function designRowKey(rxId, rxNum) {
+  return `${rxId}|${rxNum}`;
+}
+
+function findDesignRowAction(rk) {
+  return designRecordedActions.find((a) => designRowKey(a.rx_device, a.rx_channel) === rk);
+}
+
+function setDesignRowAction(rk, action) {
+  const idx = designRecordedActions.findIndex((a) => designRowKey(a.rx_device, a.rx_channel) === rk);
+  if (idx !== -1) designRecordedActions.splice(idx, 1);
+  designRecordedActions.push(action);
+  renderDesignRecordPanel();
+}
+
+function clearDesignRowAction(rk) {
+  const idx = designRecordedActions.findIndex((a) => designRowKey(a.rx_device, a.rx_channel) === rk);
+  if (idx !== -1) designRecordedActions.splice(idx, 1);
+  renderDesignRecordPanel();
+}
+
 function newId() {
   if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
   return `id-${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -60,6 +92,7 @@ function renderAll() {
   renderDevicesList();
   renderMatrix();
   renderPresetsTable();
+  renderDesignRecordPanel();
 }
 
 // --- devices -----------------------------------------------------------
@@ -86,6 +119,10 @@ function renderDevicesList() {
     const h3 = document.createElement("h3");
     h3.textContent = dev.name + (dev.imported_from ? " (imported)" : "");
     header.appendChild(h3);
+    const renameDevBtn = document.createElement("button");
+    renameDevBtn.textContent = "Rename";
+    renameDevBtn.addEventListener("click", () => renameDesignDevice(devId));
+    header.appendChild(renameDevBtn);
     const delBtn = document.createElement("button");
     delBtn.textContent = "Delete device";
     delBtn.addEventListener("click", () => deleteDesignDevice(devId));
@@ -110,6 +147,10 @@ function renderDevicesList() {
         const nameSpan = document.createElement("span");
         nameSpan.textContent = dev.channels[type][num].name;
         row.appendChild(nameSpan);
+        const renameBtn = document.createElement("button");
+        renameBtn.textContent = "Rename";
+        renameBtn.addEventListener("click", () => renameDesignChannel(devId, type, num));
+        row.appendChild(renameBtn);
         const rmBtn = document.createElement("button");
         rmBtn.textContent = "×";
         rmBtn.addEventListener("click", () => deleteDesignChannel(devId, type, num));
@@ -159,6 +200,15 @@ async function addDesignDeviceManual() {
   renderAll();
 }
 
+async function renameDesignDevice(devId) {
+  const current = currentDesign.devices[devId].name;
+  const name = prompt("Rename device:", current);
+  if (!name || !name.trim() || name === current) return;
+  currentDesign.devices[devId].name = name.trim();
+  await persistDesign();
+  renderAll();
+}
+
 async function deleteDesignDevice(devId) {
   if (!confirm(`Delete device "${currentDesign.devices[devId].name}" from this design?`)) return;
   delete currentDesign.devices[devId];
@@ -171,6 +221,15 @@ async function deleteDesignDevice(devId) {
 
 async function addDesignChannel(devId, type, num, name) {
   currentDesign.devices[devId].channels[type][num] = { name };
+  await persistDesign();
+  renderAll();
+}
+
+async function renameDesignChannel(devId, type, num) {
+  const current = currentDesign.devices[devId].channels[type][num].name;
+  const name = prompt("Rename channel:", current);
+  if (!name || !name.trim() || name === current) return;
+  currentDesign.devices[devId].channels[type][num].name = name.trim();
   await persistDesign();
   renderAll();
 }
@@ -287,13 +346,80 @@ function findDesignConnection(rxId, rxNum, txId, txNum) {
   );
 }
 
-async function toggleDesignConnection(rxId, rxNum, txId, txNum, isActive) {
+function setDesignConnection(rxId, rxNum, txId, txNum) {
   currentDesign.connections = currentDesign.connections.filter(
     (c) => !(c.rx_device === rxId && String(c.rx_channel) === String(rxNum))
   );
-  if (!isActive) {
+  if (txId !== null && txId !== undefined) {
     currentDesign.connections.push({ rx_device: rxId, rx_channel: rxNum, tx_device: txId, tx_channel: txNum });
   }
+}
+
+async function toggleDesignConnection(rxId, rxNum, txId, txNum, isActive) {
+  if (!designRecording) {
+    setDesignConnection(rxId, rxNum, isActive ? null : txId, isActive ? null : txNum);
+    await persistDesign();
+    renderMatrix();
+    return;
+  }
+
+  // Recording: each cell cycles blank -> green -> red -> blank as you click
+  // it repeatedly, same model as the real routing page. The one exception
+  // is the very first click on a row's already-connected cell, which goes
+  // straight to red (skipping green) since there's nothing to "add".
+  const rk = designRowKey(rxId, rxNum);
+  if (!designRecordingBaseline.has(rk)) {
+    const existingConn = currentDesign.connections.find(
+      (c) => c.rx_device === rxId && String(c.rx_channel) === String(rxNum)
+    );
+    designRecordingBaseline.set(rk, existingConn ? { device: existingConn.tx_device, name: existingConn.tx_channel } : null);
+  }
+  const baseline = designRecordingBaseline.get(rk);
+  const existingAction = findDesignRowAction(rk);
+  const clickedMatchesExisting = Boolean(
+    existingAction && existingAction.tx_device === txId && String(existingAction.tx_channel) === String(txNum)
+  );
+  const clickedIsBaseline = Boolean(baseline && baseline.device === txId && String(baseline.name) === String(txNum));
+
+  let nextAction; // "add" | "remove" | null (null clears back to blank)
+  if (clickedMatchesExisting) {
+    nextAction = existingAction.action === "add" ? "remove" : null;
+  } else if (!existingAction && clickedIsBaseline) {
+    nextAction = "remove";
+  } else {
+    nextAction = "add";
+  }
+
+  if (nextAction === "add") {
+    setDesignConnection(rxId, rxNum, txId, txNum);
+  } else if (nextAction === "remove") {
+    setDesignConnection(rxId, rxNum, null, null);
+  } else if (baseline) {
+    setDesignConnection(rxId, rxNum, baseline.device, baseline.name);
+  } else {
+    setDesignConnection(rxId, rxNum, null, null);
+  }
+
+  if (nextAction === null) {
+    clearDesignRowAction(rk);
+  } else {
+    const rxDev = currentDesign.devices[rxId];
+    const txDev = currentDesign.devices[txId];
+    const rxChan = rxDev.channels.receivers[rxNum];
+    const txChan = txDev ? txDev.channels.transmitters[txNum] : null;
+    setDesignRowAction(rk, {
+      action: nextAction,
+      rx_device: rxId,
+      rx_device_label: rxDev.name,
+      rx_channel: rxNum,
+      rx_channel_label: rxChan ? rxChan.name : rxNum,
+      tx_device: txId,
+      tx_device_label: txDev ? txDev.name : null,
+      tx_channel: txNum,
+      tx_channel_label: txChan ? txChan.name : null,
+    });
+  }
+
   await persistDesign();
   renderMatrix();
 }
@@ -356,12 +482,21 @@ function renderMatrix() {
       rowTh.textContent = ch.name;
       tr.appendChild(rowTh);
 
+      const rk = designRowKey(g.id, ch.number);
+      const rowAction = designRecording ? findDesignRowAction(rk) : undefined;
+
       for (const tg of txGroups) {
         for (const tch of tg.channels) {
           const td = document.createElement("td");
           const conn = findDesignConnection(g.id, ch.number, tg.id, tch.number);
           const active = Boolean(conn);
-          td.classList.toggle("active", active);
+          if (rowAction) {
+            if (rowAction.tx_device === tg.id && String(rowAction.tx_channel) === String(tch.number)) {
+              td.classList.add(rowAction.action === "add" ? "recording-add" : "recording-remove");
+            }
+          } else {
+            td.classList.toggle("active", active);
+          }
           td.title = `${tg.name} ${tch.name} → ${g.name} ${ch.name}`;
           td.addEventListener("click", () => toggleDesignConnection(g.id, ch.number, tg.id, tch.number, active));
           tr.appendChild(td);
@@ -378,12 +513,17 @@ function renderMatrix() {
 
 // --- design-scoped presets --------------------------------------------------
 
+function formatDesignTimestamp(epochSeconds) {
+  if (!epochSeconds) return "–";
+  return new Date(epochSeconds * 1000).toLocaleString();
+}
+
 function renderPresetsTable() {
   const tbody = document.getElementById("design-presets-rows");
   tbody.innerHTML = "";
   const presetIds = Object.keys(currentDesign.presets || {});
   if (presetIds.length === 0) {
-    tbody.innerHTML = '<tr><td class="empty" colspan="3">No presets saved yet.</td></tr>';
+    tbody.innerHTML = '<tr><td class="empty" colspan="4">No presets saved yet.</td></tr>';
     return;
   }
   for (const pid of presetIds) {
@@ -398,9 +538,19 @@ function renderPresetsTable() {
     countTd.textContent = `${preset.actions.length} action(s)`;
     tr.appendChild(countTd);
 
+    const updatedTd = document.createElement("td");
+    updatedTd.textContent = formatDesignTimestamp(preset.updated_at);
+    tr.appendChild(updatedTd);
+
     const actionsTd = document.createElement("td");
     actionsTd.style.display = "flex";
     actionsTd.style.gap = "6px";
+    actionsTd.style.flexWrap = "wrap";
+
+    const viewBtn = document.createElement("button");
+    viewBtn.textContent = "View";
+    viewBtn.addEventListener("click", () => toggleDesignPresetDetail(tr, pid));
+    actionsTd.appendChild(viewBtn);
 
     const loadBtn = document.createElement("button");
     loadBtn.textContent = "Load into design";
@@ -425,6 +575,18 @@ function renderPresetsTable() {
     applyLiveBtn.addEventListener("click", () => applyDesignToLive(pid));
     actionsTd.appendChild(applyLiveBtn);
 
+    const renameBtn = document.createElement("button");
+    renameBtn.textContent = "Rename";
+    renameBtn.addEventListener("click", async () => {
+      const newName = prompt("Rename preset:", preset.name);
+      if (!newName || !newName.trim() || newName === preset.name) return;
+      preset.name = newName.trim();
+      preset.updated_at = Date.now() / 1000;
+      await persistDesign();
+      renderAll();
+    });
+    actionsTd.appendChild(renameBtn);
+
     const deleteBtn = document.createElement("button");
     deleteBtn.textContent = "Delete";
     deleteBtn.addEventListener("click", async () => {
@@ -440,15 +602,102 @@ function renderPresetsTable() {
   }
 }
 
+function toggleDesignPresetDetail(afterRow, pid) {
+  const next = afterRow.nextElementSibling;
+  if (next && next.classList.contains("preset-detail-row")) {
+    next.remove();
+    return;
+  }
+  document.querySelectorAll(".preset-detail-row").forEach((el) => el.remove());
+
+  const preset = currentDesign.presets[pid];
+  const tr = document.createElement("tr");
+  tr.className = "preset-detail-row";
+  const td = document.createElement("td");
+  td.colSpan = 4;
+  const list = document.createElement("ul");
+  list.className = "preset-action-list";
+  for (const action of preset.actions) {
+    const li = document.createElement("li");
+    li.className = action.action === "add" ? "add" : "remove";
+    li.textContent = actionLabel(action);
+    list.appendChild(li);
+  }
+  td.appendChild(list);
+  tr.appendChild(td);
+  afterRow.parentNode.insertBefore(tr, afterRow.nextSibling);
+}
+
+// --- recording panel + shared save dialog -----------------------------------
+
+function renderDesignRecordPanel() {
+  const panel = document.getElementById("design-record-panel");
+  const list = document.getElementById("design-record-list");
+  panel.style.display = designRecordedActions.length > 0 ? "block" : "none";
+  list.innerHTML = "";
+  for (const action of designRecordedActions) {
+    const li = document.createElement("li");
+    li.className = action.action === "add" ? "add" : "remove";
+
+    const label = document.createElement("span");
+    label.textContent = actionLabel(action);
+    li.appendChild(label);
+
+    const removeBtn = document.createElement("button");
+    removeBtn.textContent = "×";
+    removeBtn.title = "Remove from recording";
+    removeBtn.addEventListener("click", () => {
+      const idx = designRecordedActions.indexOf(action);
+      if (idx !== -1) designRecordedActions.splice(idx, 1);
+      renderDesignRecordPanel();
+    });
+    li.appendChild(removeBtn);
+
+    list.appendChild(li);
+  }
+}
+
+let designSaveDialogActions = [];
+let designSaveDialogIsRecording = false;
+
+function openDesignSaveDialog(actions, isRecording) {
+  if (actions.length === 0) {
+    showToast("Nothing to save", true);
+    return;
+  }
+  designSaveDialogActions = actions;
+  designSaveDialogIsRecording = isRecording;
+
+  const dialog = document.getElementById("design-save-dialog");
+  const hint = document.getElementById("design-save-dialog-hint");
+  const select = document.getElementById("design-save-dialog-existing");
+  const nameInput = document.getElementById("design-save-dialog-name");
+
+  hint.textContent = `Save preset (${actions.length} action${actions.length === 1 ? "" : "s"})`;
+  nameInput.value = "";
+
+  select.innerHTML = '<option value="">— new preset —</option>';
+  for (const [pid, preset] of Object.entries(currentDesign.presets || {})) {
+    const opt = document.createElement("option");
+    opt.value = pid;
+    opt.textContent = preset.name;
+    select.appendChild(opt);
+  }
+
+  dialog.style.display = "block";
+  nameInput.focus();
+}
+
+function closeDesignSaveDialog() {
+  document.getElementById("design-save-dialog").style.display = "none";
+  designSaveDialogActions = [];
+}
+
 async function saveDesignConnectionsAsPreset() {
   if (currentDesign.connections.length === 0) {
     showToast("No connections to save", true);
     return;
   }
-  const name = prompt("Name for this preset:");
-  if (!name || !name.trim()) return;
-
-  const id = newId();
   const actions = currentDesign.connections.map((c) => {
     const rxDev = currentDesign.devices[c.rx_device];
     const txDev = currentDesign.devices[c.tx_device];
@@ -466,10 +715,7 @@ async function saveDesignConnectionsAsPreset() {
       tx_channel_label: txChan ? txChan.name : c.tx_channel,
     };
   });
-  currentDesign.presets[id] = { name: name.trim(), actions };
-  await persistDesign();
-  renderAll();
-  showToast(`Saved preset "${name.trim()}"`);
+  openDesignSaveDialog(actions, false);
 }
 
 // --- apply to live ---------------------------------------------------------
@@ -492,6 +738,58 @@ async function applyDesignToLive(presetId) {
   } catch (err) {
     showToast(err.message, true);
   }
+}
+
+// --- export / import ---------------------------------------------------------
+
+function exportCurrentDesign() {
+  if (!currentDesign) return;
+  const data = JSON.stringify(
+    {
+      name: currentDesign.name,
+      devices: currentDesign.devices,
+      connections: currentDesign.connections,
+      presets: currentDesign.presets,
+    },
+    null,
+    2
+  );
+  const blob = new Blob([data], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${currentDesign.name.replace(/[^a-z0-9_-]+/gi, "_")}.design.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importDesignFromFile(file) {
+  const reader = new FileReader();
+  reader.onload = async () => {
+    let data;
+    try {
+      data = JSON.parse(reader.result);
+    } catch {
+      showToast("Invalid JSON file", true);
+      return;
+    }
+    const name = prompt("Name for imported design:", data.name || "Imported design");
+    if (!name || !name.trim()) return;
+    try {
+      const result = await api("POST", "/api/designs", {
+        name: name.trim(),
+        devices: data.devices || {},
+        connections: data.connections || [],
+        presets: data.presets || {},
+      });
+      await loadDesignsList(result.id);
+      await selectDesign(result.id);
+      showToast(`Imported "${name.trim()}"`);
+    } catch (err) {
+      showToast(err.message, true);
+    }
+  };
+  reader.readAsText(file);
 }
 
 // --- design CRUD -----------------------------------------------------------
@@ -548,4 +846,86 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.getElementById("apply-base-btn").addEventListener("click", () => applyDesignToLive(null));
   document.getElementById("save-design-preset-btn").addEventListener("click", saveDesignConnectionsAsPreset);
+
+  const recordToggleBtn = document.getElementById("design-record-toggle-btn");
+  recordToggleBtn.addEventListener("click", () => {
+    designRecording = !designRecording;
+    recordToggleBtn.textContent = designRecording ? "Stop recording" : "Record changes for a preset";
+    recordToggleBtn.classList.toggle("primary", designRecording);
+    if (designRecording) {
+      designRecordedActions.length = 0;
+      designRecordingBaseline.clear();
+      renderDesignRecordPanel();
+    }
+    renderMatrix();
+  });
+
+  document.getElementById("design-record-save-btn").addEventListener("click", () => {
+    openDesignSaveDialog(designRecordedActions.slice(), true);
+  });
+
+  document.getElementById("design-record-discard-btn").addEventListener("click", async () => {
+    for (const [rk, baseline] of designRecordingBaseline.entries()) {
+      const sep = rk.indexOf("|");
+      const rxId = rk.slice(0, sep);
+      const rxNum = rk.slice(sep + 1);
+      if (baseline) {
+        setDesignConnection(rxId, rxNum, baseline.device, baseline.name);
+      } else {
+        setDesignConnection(rxId, rxNum, null, null);
+      }
+    }
+    designRecordedActions.length = 0;
+    designRecordingBaseline.clear();
+    await persistDesign();
+    renderAll();
+  });
+
+  document.getElementById("design-save-dialog-existing").addEventListener("change", (e) => {
+    const preset = currentDesign.presets[e.target.value];
+    document.getElementById("design-save-dialog-name").value = preset ? preset.name : "";
+  });
+
+  document.getElementById("design-save-dialog-cancel-btn").addEventListener("click", closeDesignSaveDialog);
+
+  document.getElementById("design-save-dialog-save-btn").addEventListener("click", async () => {
+    const name = document.getElementById("design-save-dialog-name").value.trim();
+    if (!name) {
+      showToast("Name is required", true);
+      return;
+    }
+    const pid = document.getElementById("design-save-dialog-existing").value || newId();
+    const now = Date.now() / 1000;
+    const existing = currentDesign.presets[pid];
+    currentDesign.presets[pid] = {
+      name,
+      actions: designSaveDialogActions,
+      created_at: existing ? existing.created_at : now,
+      updated_at: now,
+    };
+    try {
+      await persistDesign();
+    } catch (err) {
+      showToast(err.message, true);
+      return;
+    }
+    showToast(`Saved preset "${name}"`);
+    const wasRecording = designSaveDialogIsRecording;
+    closeDesignSaveDialog();
+    if (wasRecording) {
+      designRecordedActions.length = 0;
+      designRecordingBaseline.clear();
+    }
+    renderAll();
+  });
+
+  document.getElementById("design-export-btn").addEventListener("click", exportCurrentDesign);
+  document.getElementById("design-import-btn").addEventListener("click", () => {
+    document.getElementById("design-import-input").click();
+  });
+  document.getElementById("design-import-input").addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if (file) importDesignFromFile(file);
+    e.target.value = "";
+  });
 });

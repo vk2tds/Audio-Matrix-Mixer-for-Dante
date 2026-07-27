@@ -1,1 +1,59 @@
-{}
+{
+  "912d6d0d-0b7c-49a2-b07a-de444c637936": {
+    "name": "Test",
+    "devices": {
+      "d834b9ab-8a0a-4590-a0c3-24b8b990d635": {
+        "name": "DA11ADE-83b77d",
+        "manufacturer": "Blustream Pty Ltd",
+        "imported_from": "DA11ADE-83b77d.local.",
+        "channels": {
+          "transmitters": {},
+          "receivers": {
+            "1": {
+              "name": "CH1"
+            },
+            "2": {
+              "name": "CH2"
+            }
+          }
+        }
+      },
+      "9063036a-0f83-4cbb-bccd-9197217967f0": {
+        "name": "DA11ADE-83b8e8",
+        "manufacturer": "Blustream Pty Ltd",
+        "imported_from": "DA11ADE-83b8e8.local.",
+        "channels": {
+          "transmitters": {},
+          "receivers": {
+            "1": {
+              "name": "CH1"
+            },
+            "2": {
+              "name": "CH2"
+            }
+          }
+        }
+      },
+      "e0d64ea8-d456-474b-9d03-1a5ff0444b9a": {
+        "name": "DA11AEN-83b5a8",
+        "manufacturer": "Blustream Pty Ltd",
+        "imported_from": "DA11AEN-83b5a8.local.",
+        "channels": {
+          "transmitters": {
+            "1": {
+              "name": "CH1"
+            },
+            "2": {
+              "name": "CH2"
+            }
+          },
+          "receivers": {}
+        }
+      }
+    },
+    "connections": [],
+    "presets": {},
+    "created_at": 1785190147.050893,
+    "updated_at": 1785190181.0300689
+  }
+}
