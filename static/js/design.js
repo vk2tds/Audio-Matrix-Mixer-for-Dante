@@ -554,18 +554,18 @@ function renderPresetsTable() {
 
     const loadBtn = document.createElement("button");
     loadBtn.textContent = "Load into design";
+    loadBtn.title = "Applies as a diff: only touches the channels this preset lists, same as everywhere else in this app";
     loadBtn.addEventListener("click", async () => {
-      currentDesign.connections = preset.actions
-        .filter((a) => a.action === "add")
-        .map((a) => ({
-          rx_device: a.rx_device,
-          rx_channel: a.rx_channel,
-          tx_device: a.tx_device,
-          tx_channel: a.tx_channel,
-        }));
+      for (const action of preset.actions) {
+        if (action.action === "add") {
+          setDesignConnection(action.rx_device, action.rx_channel, action.tx_device, action.tx_channel);
+        } else {
+          setDesignConnection(action.rx_device, action.rx_channel, null, null);
+        }
+      }
       await persistDesign();
       renderAll();
-      showToast(`Loaded "${preset.name}" into the design`);
+      showToast(`Loaded "${preset.name}" into the design (${preset.actions.length} change${preset.actions.length === 1 ? "" : "s"})`);
     });
     actionsTd.appendChild(loadBtn);
 
@@ -915,6 +915,10 @@ document.addEventListener("DOMContentLoaded", () => {
     if (wasRecording) {
       designRecordedActions.length = 0;
       designRecordingBaseline.clear();
+      designRecording = false;
+      const recordToggleBtn = document.getElementById("design-record-toggle-btn");
+      recordToggleBtn.textContent = "Record changes for a preset";
+      recordToggleBtn.classList.remove("primary");
     }
     renderAll();
   });

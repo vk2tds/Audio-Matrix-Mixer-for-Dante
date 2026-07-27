@@ -2,43 +2,41 @@
   "912d6d0d-0b7c-49a2-b07a-de444c637936": {
     "name": "Test",
     "devices": {
-      "d834b9ab-8a0a-4590-a0c3-24b8b990d635": {
-        "name": "DA11ADE-83b77d",
-        "manufacturer": "Blustream Pty Ltd",
-        "imported_from": "DA11ADE-83b77d.local.",
-        "channels": {
-          "transmitters": {},
-          "receivers": {
-            "1": {
-              "name": "CH1"
-            },
-            "2": {
-              "name": "CH2"
-            }
-          }
-        }
-      },
       "9063036a-0f83-4cbb-bccd-9197217967f0": {
-        "name": "DA11ADE-83b8e8",
-        "manufacturer": "Blustream Pty Ltd",
-        "imported_from": "DA11ADE-83b8e8.local.",
         "channels": {
-          "transmitters": {},
           "receivers": {
             "1": {
-              "name": "CH1"
+              "name": "UP"
             },
             "2": {
-              "name": "CH2"
+              "name": "DOWN"
             }
-          }
-        }
+          },
+          "transmitters": {}
+        },
+        "imported_from": "DA11ADE-83b8e8.local.",
+        "manufacturer": "Blustream Pty Ltd",
+        "name": "Dante:C"
+      },
+      "d834b9ab-8a0a-4590-a0c3-24b8b990d635": {
+        "channels": {
+          "receivers": {
+            "1": {
+              "name": "LEFT"
+            },
+            "2": {
+              "name": "RIGHT"
+            }
+          },
+          "transmitters": {}
+        },
+        "imported_from": "DA11ADE-83b77d.local.",
+        "manufacturer": "Blustream Pty Ltd",
+        "name": "Dante-A"
       },
       "e0d64ea8-d456-474b-9d03-1a5ff0444b9a": {
-        "name": "DA11AEN-83b5a8",
-        "manufacturer": "Blustream Pty Ltd",
-        "imported_from": "DA11AEN-83b5a8.local.",
         "channels": {
+          "receivers": {},
           "transmitters": {
             "1": {
               "name": "CH1"
@@ -46,14 +44,86 @@
             "2": {
               "name": "CH2"
             }
-          },
-          "receivers": {}
-        }
+          }
+        },
+        "imported_from": "DA11AEN-83b5a8.local.",
+        "manufacturer": "Blustream Pty Ltd",
+        "name": "Dante-B"
       }
     },
     "connections": [],
-    "presets": {},
+    "presets": {
+      "748cdf1a-d755-4611-ad73-49a55bdf18fb": {
+        "name": "ABC",
+        "actions": [
+          {
+            "action": "add",
+            "rx_device": "d834b9ab-8a0a-4590-a0c3-24b8b990d635",
+            "rx_device_label": "Dante-A",
+            "rx_channel": 1,
+            "rx_channel_label": "LEFT",
+            "tx_device": "e0d64ea8-d456-474b-9d03-1a5ff0444b9a",
+            "tx_device_label": "Dante-B",
+            "tx_channel": 1,
+            "tx_channel_label": "CH1"
+          },
+          {
+            "action": "add",
+            "rx_device": "d834b9ab-8a0a-4590-a0c3-24b8b990d635",
+            "rx_device_label": "Dante-A",
+            "rx_channel": 2,
+            "rx_channel_label": "RIGHT",
+            "tx_device": "e0d64ea8-d456-474b-9d03-1a5ff0444b9a",
+            "tx_device_label": "Dante-B",
+            "tx_channel": 2,
+            "tx_channel_label": "CH2"
+          },
+          {
+            "action": "add",
+            "rx_device": "9063036a-0f83-4cbb-bccd-9197217967f0",
+            "rx_device_label": "Dante:C",
+            "rx_channel": 1,
+            "rx_channel_label": "UP",
+            "tx_device": "e0d64ea8-d456-474b-9d03-1a5ff0444b9a",
+            "tx_device_label": "Dante-B",
+            "tx_channel": 1,
+            "tx_channel_label": "CH1"
+          },
+          {
+            "action": "add",
+            "rx_device": "9063036a-0f83-4cbb-bccd-9197217967f0",
+            "rx_device_label": "Dante:C",
+            "rx_channel": 2,
+            "rx_channel_label": "DOWN",
+            "tx_device": "e0d64ea8-d456-474b-9d03-1a5ff0444b9a",
+            "tx_device_label": "Dante-B",
+            "tx_channel": 2,
+            "tx_channel_label": "CH2"
+          }
+        ],
+        "created_at": 1785193268.298,
+        "updated_at": 1785193268.298
+      },
+      "1c63a51a-00ba-4698-a2aa-86968ece96f9": {
+        "name": "Delete A",
+        "actions": [
+          {
+            "action": "remove",
+            "rx_device": "d834b9ab-8a0a-4590-a0c3-24b8b990d635",
+            "rx_device_label": "Dante-A",
+            "rx_channel": 1,
+            "rx_channel_label": "LEFT",
+            "tx_device": "e0d64ea8-d456-474b-9d03-1a5ff0444b9a",
+            "tx_device_label": "Dante-B",
+            "tx_channel": 1,
+            "tx_channel_label": "CH1"
+          }
+        ],
+        "created_at": 1785193297.006,
+        "updated_at": 1785193297.006
+      }
+    },
     "created_at": 1785190147.050893,
-    "updated_at": 1785190181.0300689
+    "updated_at": 1785193446.844367
   }
 }

@@ -790,6 +790,10 @@ document.addEventListener("DOMContentLoaded", () => {
       if (wasRecording) {
         recordedActions.length = 0;
         recordingBaseline.clear();
+        recording = false;
+        recordingMode = null;
+        liveBtn.classList.remove("primary");
+        planBtn.classList.remove("primary");
         renderRecordPanel();
         renderAll(DanteStore.getDevices());
       }
