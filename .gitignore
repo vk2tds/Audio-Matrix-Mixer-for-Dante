@@ -7,4 +7,4 @@ logs/
 # Vendored Font Awesome Pro kit (licensed, not committed — see setup note in
 # README). Present locally after extracting the user's own FA Pro download;
 # the app serves it from disk regardless of git tracking.
-static/vendor/
+#static/vendor/
