@@ -342,7 +342,8 @@ function populatePresetSelect() {
 }
 
 function populateDeviceSelect(selectedName) {
-  const select = document.getElementById("panel-dialog-device");
+  const input = document.getElementById("panel-dialog-device");
+  const datalist = document.getElementById("panel-dialog-device-datalist");
   const names = new Set(
     Object.values(liveDevices)
       .map((d) => d.name || d.server_name)
@@ -350,8 +351,8 @@ function populateDeviceSelect(selectedName) {
   );
   if (selectedName) names.add(selectedName);
   const sorted = [...names].sort((a, b) => a.localeCompare(b));
-  select.innerHTML = sorted.map((n) => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join("");
-  if (selectedName) select.value = selectedName;
+  datalist.innerHTML = sorted.map((n) => `<option value="${escapeHtml(n)}">`).join("");
+  input.value = selectedName || "";
 }
 
 function setDialogIcon(iconClass) {
@@ -568,6 +569,7 @@ function toggleEditMode() {
   editMode = !editMode;
   document.getElementById("panel-edit-toggle-btn").textContent = editMode ? "Done editing" : "Edit layout";
   document.getElementById("panel-edit-toggle-btn").classList.toggle("primary", editMode);
+  if (!editMode) closeDialog();
   renderGrid();
 }
 

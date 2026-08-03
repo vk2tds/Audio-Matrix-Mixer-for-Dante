@@ -78,17 +78,18 @@
       "w": 1
     },
     {
-      "col": 1,
-      "color": null,
-      "h": 1,
-      "icon": "fas fa-volume-mute",
       "id": "e788eceb-7f53-42f8-8a18-1d8e7639d7c8",
-      "label": null,
-      "preset_id": "8eccf076-d1bb-4a01-ac43-dcf12a7722d2",
-      "readonly": true,
-      "row": 3,
       "type": "preset",
-      "w": 1
+      "preset_id": "8eccf076-d1bb-4a01-ac43-dcf12a7722d2",
+      "device_name": null,
+      "row": 3,
+      "col": 1,
+      "w": 1,
+      "h": 1,
+      "label": null,
+      "icon": "fas fa-volume-mute",
+      "color": null,
+      "readonly": true
     },
     {
       "col": 7,
