@@ -938,6 +938,31 @@ table.matrix th.group-col-span {
   color: var(--accent);
 }
 
+.panel-icon-picker-controls {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.panel-icon-picker-controls input {
+  flex: 1;
+  background: var(--panel-alt);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: var(--radius);
+  padding: 6px 10px;
+  font-size: 13px;
+}
+
+.panel-icon-picker-controls select {
+  background: var(--panel-alt);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: var(--radius);
+  padding: 6px 10px;
+  font-size: 13px;
+}
+
 .panel-icon-picker {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
@@ -958,4 +983,9 @@ table.matrix th.group-col-span {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+#panel-icon-picker-count {
+  margin-top: 6px;
+  margin-bottom: 0;
 }

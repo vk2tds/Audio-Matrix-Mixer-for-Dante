@@ -254,6 +254,9 @@ function populatePresetSelect() {
 function setDialogIcon(iconClass) {
   document.getElementById("panel-dialog-icon-preview").innerHTML = iconMarkup(iconClass);
   document.getElementById("panel-dialog-icon-preview").dataset.icon = iconClass || "";
+  const prefix = (iconClass || "").split(" ")[0];
+  const style = Object.entries(FA_STYLE_PREFIX).find(([, p]) => p === prefix);
+  if (style) document.getElementById("panel-icon-style").value = style[0];
 }
 
 function openAddDialog(row, col) {
@@ -270,7 +273,7 @@ function openAddDialog(row, col) {
   setDialogIcon(null);
   populatePresetSelect();
   syncDialogTypeVisibility();
-  document.getElementById("panel-icon-picker").style.display = "none";
+  document.getElementById("panel-icon-picker-wrap").style.display = "none";
   document.getElementById("panel-button-dialog").style.display = "block";
 }
 
@@ -291,13 +294,13 @@ function openEditDialog(btn) {
   document.getElementById("panel-dialog-color").value = btn.color || "#2563eb";
   setDialogIcon(btn.icon);
   syncDialogTypeVisibility();
-  document.getElementById("panel-icon-picker").style.display = "none";
+  document.getElementById("panel-icon-picker-wrap").style.display = "none";
   document.getElementById("panel-button-dialog").style.display = "block";
 }
 
 function closeDialog() {
   document.getElementById("panel-button-dialog").style.display = "none";
-  document.getElementById("panel-icon-picker").style.display = "none";
+  document.getElementById("panel-icon-picker-wrap").style.display = "none";
   editingButtonId = null;
   pendingAddCell = null;
 }
@@ -308,17 +311,39 @@ function syncDialogTypeVisibility() {
   document.getElementById("panel-dialog-icon-row").style.display = type === "label" ? "none" : "flex";
 }
 
+const ICON_PICKER_RENDER_CAP = 240;
+
 function renderIconPicker() {
   const picker = document.getElementById("panel-icon-picker");
-  picker.innerHTML = PANEL_ICONS.map(
-    (cls) => `<button type="button" class="panel-icon-choice" data-icon="${cls}"><i class="${cls}"></i></button>`
-  ).join("");
+  const count = document.getElementById("panel-icon-picker-count");
+  const style = document.getElementById("panel-icon-style").value;
+  const query = document.getElementById("panel-icon-search").value.trim().toLowerCase();
+
+  const matches = FA_ICONS.filter((icon) => {
+    if (!icon.s.includes(style)) return false;
+    if (!query) return true;
+    if (icon.n.includes(query) || icon.l.toLowerCase().includes(query)) return true;
+    return icon.t.some((term) => String(term).toLowerCase().includes(query));
+  });
+
+  const shown = matches.slice(0, ICON_PICKER_RENDER_CAP);
+  picker.innerHTML = shown
+    .map((icon) => {
+      const cls = faIconClass(style, icon.n);
+      return `<button type="button" class="panel-icon-choice" data-icon="${cls}" title="${escapeHtml(icon.l)}"><i class="${cls}"></i></button>`;
+    })
+    .join("");
   picker.querySelectorAll(".panel-icon-choice").forEach((el) => {
     el.addEventListener("click", () => {
       setDialogIcon(el.dataset.icon);
-      picker.style.display = "none";
+      document.getElementById("panel-icon-picker-wrap").style.display = "none";
     });
   });
+
+  count.textContent =
+    matches.length > shown.length
+      ? `Showing ${shown.length} of ${matches.length} — keep typing to narrow it down`
+      : `${matches.length} icon${matches.length === 1 ? "" : "s"}`;
 }
 
 async function saveDialogButton() {
@@ -436,9 +461,13 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   document.getElementById("panel-dialog-type").addEventListener("change", syncDialogTypeVisibility);
   document.getElementById("panel-dialog-icon-pick-btn").addEventListener("click", () => {
-    const picker = document.getElementById("panel-icon-picker");
-    picker.style.display = picker.style.display === "none" ? "grid" : "none";
+    const wrap = document.getElementById("panel-icon-picker-wrap");
+    const opening = wrap.style.display === "none";
+    wrap.style.display = opening ? "block" : "none";
+    if (opening) renderIconPicker();
   });
+  document.getElementById("panel-icon-search").addEventListener("input", renderIconPicker);
+  document.getElementById("panel-icon-style").addEventListener("change", renderIconPicker);
   document.getElementById("panel-dialog-icon-clear-btn").addEventListener("click", () => setDialogIcon(null));
   document.getElementById("panel-dialog-save-btn").addEventListener("click", saveDialogButton);
   document.getElementById("panel-dialog-delete-btn").addEventListener("click", deleteDialogButton);

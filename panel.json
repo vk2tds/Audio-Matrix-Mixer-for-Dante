@@ -1,5 +1,78 @@
 {
   "cols": 8,
   "rows": 4,
-  "buttons": []
+  "buttons": [
+    {
+      "id": "7eded146-acf3-43d8-b00c-2de504386f17",
+      "type": "preset",
+      "preset_id": "8eccf076-d1bb-4a01-ac43-dcf12a7722d2",
+      "row": 1,
+      "col": 0,
+      "w": 1,
+      "h": 1,
+      "label": "Studio 1 OB",
+      "icon": "fas fa-video",
+      "color": "#9929bd"
+    },
+    {
+      "id": "c28c33f8-81d5-43fc-a51c-d2c9896033db",
+      "type": "preset",
+      "preset_id": "8eccf076-d1bb-4a01-ac43-dcf12a7722d2",
+      "row": 1,
+      "col": 1,
+      "w": 1,
+      "h": 1,
+      "label": "Studio 2 OB",
+      "icon": null,
+      "color": "#38571a"
+    },
+    {
+      "col": 0,
+      "color": null,
+      "h": 1,
+      "icon": null,
+      "id": "2a33900a-aa5e-4685-a704-5e42899b2b03",
+      "label": "Studios",
+      "preset_id": null,
+      "row": 0,
+      "type": "label",
+      "w": 2
+    },
+    {
+      "col": 0,
+      "color": null,
+      "h": 1,
+      "icon": "fas fa-volume-high",
+      "id": "9d3fd2c5-6ced-4820-9cb2-30ea66458faa",
+      "label": "Studio 1 BT",
+      "preset_id": "f306fac4-137b-46da-96d4-8cf65fd11f60",
+      "row": 2,
+      "type": "preset",
+      "w": 1
+    },
+    {
+      "col": 1,
+      "color": null,
+      "h": 1,
+      "icon": null,
+      "id": "78a67690-6c67-4fc3-b863-452ad49a2582",
+      "label": "Studio 2 BT",
+      "preset_id": "f306fac4-137b-46da-96d4-8cf65fd11f60",
+      "row": 2,
+      "type": "preset",
+      "w": 1
+    },
+    {
+      "id": "eb3475b2-0290-41ed-aef3-513d93b27511",
+      "type": "preset",
+      "preset_id": "8eccf076-d1bb-4a01-ac43-dcf12a7722d2",
+      "row": 1,
+      "col": 2,
+      "w": 1,
+      "h": 1,
+      "label": "Bypass Delay",
+      "icon": "fas fa-radiation",
+      "color": "#f5ec00"
+    }
+  ]
 }

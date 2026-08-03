@@ -80,7 +80,20 @@
     </select>
   </div>
 
-  <div id="panel-icon-picker" class="panel-icon-picker" style="display: none;"></div>
+  <div id="panel-icon-picker-wrap" style="display: none;">
+    <div class="panel-icon-picker-controls">
+      <input type="text" id="panel-icon-search" placeholder="Search icons…">
+      <select id="panel-icon-style">
+        <option value="solid">Solid</option>
+        <option value="regular">Regular</option>
+        <option value="light">Light</option>
+        <option value="duotone">Duotone</option>
+        <option value="brands">Brands</option>
+      </select>
+    </div>
+    <div id="panel-icon-picker" class="panel-icon-picker"></div>
+    <div class="hint" id="panel-icon-picker-count"></div>
+  </div>
 
   <div class="button-row">
     <button type="button" id="panel-dialog-save-btn" class="primary">Save</button>
@@ -90,6 +103,7 @@
 </div>
 {% endblock %}
 {% block scripts %}
+<script src="{{ url_for('static', filename='js/panel-icons-data.js') }}"></script>
 <script src="{{ url_for('static', filename='js/panel-icons.js') }}"></script>
 <script src="{{ url_for('static', filename='js/panel.js') }}"></script>
 {% endblock %}

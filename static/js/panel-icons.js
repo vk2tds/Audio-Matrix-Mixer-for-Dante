@@ -1,50 +1,21 @@
-// Curated subset of Font Awesome Free ("fa-solid") icon class names relevant to
-// AV/routing control. The icon set is loaded via CDN in base.html — an icon here
-// is just a class name string, stored on the button, rendered as <i class="...">.
-const PANEL_ICONS = [
-  "fa-solid fa-play",
-  "fa-solid fa-pause",
-  "fa-solid fa-stop",
-  "fa-solid fa-microphone",
-  "fa-solid fa-microphone-slash",
-  "fa-solid fa-volume-high",
-  "fa-solid fa-volume-low",
-  "fa-solid fa-volume-xmark",
-  "fa-solid fa-headphones",
-  "fa-solid fa-music",
-  "fa-solid fa-video",
-  "fa-solid fa-tv",
-  "fa-solid fa-radio",
-  "fa-solid fa-tower-broadcast",
-  "fa-solid fa-podcast",
-  "fa-solid fa-film",
-  "fa-solid fa-sliders",
-  "fa-solid fa-plug",
-  "fa-solid fa-wifi",
-  "fa-solid fa-link",
-  "fa-solid fa-link-slash",
-  "fa-solid fa-lock",
-  "fa-solid fa-lock-open",
-  "fa-solid fa-power-off",
-  "fa-solid fa-house",
-  "fa-solid fa-star",
-  "fa-solid fa-heart",
-  "fa-solid fa-bell",
-  "fa-solid fa-bell-slash",
-  "fa-solid fa-gear",
-  "fa-solid fa-check",
-  "fa-solid fa-xmark",
-  "fa-solid fa-triangle-exclamation",
-  "fa-solid fa-circle-info",
-  "fa-solid fa-plus",
-  "fa-solid fa-minus",
-  "fa-solid fa-arrow-up",
-  "fa-solid fa-arrow-down",
-  "fa-solid fa-arrow-left",
-  "fa-solid fa-arrow-right",
-  "fa-solid fa-arrows-rotate",
-  "fa-solid fa-users",
-  "fa-solid fa-user",
-  "fa-solid fa-guitar",
-  "fa-solid fa-drum",
-];
+// Font Awesome Pro 5.x style-family prefixes. The icon list itself lives in
+// panel-icons-data.js (FA_ICONS), generated from the licensed kit's metadata.
+const FA_STYLE_PREFIX = {
+  solid: "fas",
+  regular: "far",
+  light: "fal",
+  duotone: "fad",
+  brands: "fab",
+};
+
+const FA_STYLE_LABELS = {
+  solid: "Solid",
+  regular: "Regular",
+  light: "Light",
+  duotone: "Duotone",
+  brands: "Brands",
+};
+
+function faIconClass(style, name) {
+  return `${FA_STYLE_PREFIX[style]} fa-${name}`;
+}
