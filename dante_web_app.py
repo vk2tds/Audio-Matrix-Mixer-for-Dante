@@ -93,6 +93,11 @@ def panel_page():
     return render_template("panel.html")
 
 
+@app.route("/panel/display")
+def panel_display_page():
+    return render_template("panel.html", hide_chrome=True, display_only=True)
+
+
 # --- API proxy ---------------------------------------------------------
 
 

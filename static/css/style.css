@@ -850,6 +850,10 @@ table.matrix th.group-col-span {
 }
 
 /* Preset panel */
+.display-hidden {
+  display: none;
+}
+
 .panel-grid {
   display: grid;
   gap: 8px;
@@ -910,7 +914,7 @@ table.matrix th.group-col-span {
 }
 
 .panel-button-label {
-  cursor: default;
+  cursor: pointer;
   background: transparent;
   border: none;
   color: var(--text-dim);
@@ -918,6 +922,12 @@ table.matrix th.group-col-span {
   text-transform: uppercase;
   font-size: 12px;
   letter-spacing: 0.03em;
+}
+
+.panel-button-label-enabled {
+  background: var(--accent-dim);
+  color: var(--text);
+  border-radius: var(--radius);
 }
 
 .panel-button-editing {

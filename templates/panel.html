@@ -1,16 +1,16 @@
 {% extends "base.html" %}
 {% block title %}Panel – Dante Web{% endblock %}
 {% block content %}
-<div class="panel">
+<div class="panel{% if display_only %} display-hidden{% endif %}">
   <div class="hint">
     A grid of buttons for your saved routing presets. Press a button to apply its preset; press it again to reverse
     it (unsubscribes what it added, restores what it removed, where possible). Multiple buttons can be lit at once.
     A button glows at half intensity when its preset's rules already hold true on the live matrix, even if you
-    didn't press it. Label buttons are just static text, for grouping. A read-only button can't be pressed by
-    clicking, but still lights up automatically when its preset's rules match live. A device-present button lights
-    up whenever a chosen Dante device is online — it's never clickable. In edit mode, drag a button onto an empty
-    cell to move it. Press state, rule-matching and device presence are all live — layout (position, size, text,
-    icon, colour) is saved to disk.
+    didn't press it. A heading can be toggled enabled/not enabled — its background colour changes to mark it. A
+    read-only button can't be pressed by clicking, but still lights up automatically when its preset's rules match
+    live. A device-present button lights up whenever a chosen Dante device is online — it's never clickable. In
+    edit mode, drag a button onto an empty cell to move it. Press state, rule-matching and device presence are all
+    live — layout (position, size, text, icon, colour) is saved to disk.
   </div>
   <div class="hint-row">
     <div class="hint-row-buttons">
@@ -19,6 +19,7 @@
       <button type="button" id="panel-resize-btn">Resize</button>
     </div>
     <div class="hint-row-buttons">
+      <a href="/panel/display" target="_blank" class="btn">Display-only view ↗</a>
       <button type="button" id="panel-edit-toggle-btn">Edit layout</button>
     </div>
   </div>

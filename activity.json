@@ -1158,5 +1158,31 @@
     },
     "ok": false,
     "error": "2 action(s) failed"
+  },
+  {
+    "timestamp": 1785793549.0992792,
+    "kind": "panel:press",
+    "detail": {
+      "preset_id": "f306fac4-137b-46da-96d4-8cf65fd11f60",
+      "preset_name": "Two",
+      "on": true,
+      "applied": 2,
+      "total": 4
+    },
+    "ok": false,
+    "error": "2 action(s) failed"
+  },
+  {
+    "timestamp": 1785793550.435416,
+    "kind": "panel:press",
+    "detail": {
+      "preset_id": "f306fac4-137b-46da-96d4-8cf65fd11f60",
+      "preset_name": "Two",
+      "on": false,
+      "applied": 2,
+      "total": 4
+    },
+    "ok": false,
+    "error": "2 action(s) failed"
   }
 ]

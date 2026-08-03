@@ -125,9 +125,21 @@ function buildPanelButton(btn) {
 
   if (btn.type === "label") {
     el.className = "panel-button panel-button-label";
+    if (btn.enabled) el.classList.add("panel-button-label-enabled");
     el.innerHTML = `${iconMarkup(btn.icon)}<span>${escapeHtml(btn.label || "")}</span>`;
-    if (btn.color) {
-      el.style.color = btn.color;
+
+    const color = btn.color;
+    if (color) {
+      if (btn.enabled) {
+        el.style.background = color;
+        el.style.color = bestTextColor(color);
+      } else {
+        el.style.color = color;
+      }
+    }
+
+    if (!editMode) {
+      el.addEventListener("click", () => toggleLabelEnabled(btn));
     }
   } else if (btn.type === "device") {
     const present = isDevicePresent(btn.device_name, liveDevices);
@@ -306,6 +318,18 @@ async function pressPanelButton(btn) {
     }
     renderGrid();
   } catch (err) {
+    showToast(err.message, true);
+  }
+}
+
+async function toggleLabelEnabled(btn) {
+  btn.enabled = !btn.enabled;
+  renderGrid();
+  try {
+    await persistPanel();
+  } catch (err) {
+    btn.enabled = !btn.enabled;
+    renderGrid();
     showToast(err.message, true);
   }
 }

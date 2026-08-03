@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome/css/all.min.css') }}">
 </head>
 <body>
+  {% if not hide_chrome %}
   <header class="topbar">
     <h1>Dante Web</h1>
     <nav class="tabs">
@@ -32,6 +33,7 @@
     </div>
     <button type="button" id="theme-toggle" class="theme-toggle" title="Toggle light/dark mode" aria-label="Toggle light/dark mode"></button>
   </header>
+  {% endif %}
   <main>
     {% block content %}{% endblock %}
   </main>

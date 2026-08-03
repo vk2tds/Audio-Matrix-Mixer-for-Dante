@@ -89,6 +89,34 @@
       "row": 3,
       "type": "preset",
       "w": 1
+    },
+    {
+      "col": 7,
+      "color": null,
+      "device_name": "Mini-Garage",
+      "h": 1,
+      "icon": "fas fa-rss",
+      "id": "94ab4d3b-9222-46d6-a8b0-d5f893380d4f",
+      "label": "Logger",
+      "preset_id": null,
+      "readonly": false,
+      "row": 1,
+      "type": "device",
+      "w": 1
+    },
+    {
+      "col": 7,
+      "color": null,
+      "device_name": "DA11ADE-83b8e8",
+      "h": 1,
+      "icon": "fas fa-router",
+      "id": "85bf0302-cff3-4bfd-9ef0-df487ba06bd4",
+      "label": "Barix",
+      "preset_id": null,
+      "readonly": false,
+      "row": 2,
+      "type": "device",
+      "w": 1
     }
   ]
 }
