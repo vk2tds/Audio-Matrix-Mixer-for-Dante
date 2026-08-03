@@ -3,28 +3,28 @@
   "rows": 4,
   "buttons": [
     {
+      "col": 0,
+      "color": "#9929bd",
+      "h": 1,
+      "icon": "fas fa-video",
       "id": "7eded146-acf3-43d8-b00c-2de504386f17",
-      "type": "preset",
+      "label": "Studio 1 OB",
       "preset_id": "8eccf076-d1bb-4a01-ac43-dcf12a7722d2",
       "row": 1,
-      "col": 0,
-      "w": 1,
-      "h": 1,
-      "label": "Studio 1 OB",
-      "icon": "fas fa-video",
-      "color": "#9929bd"
+      "type": "preset",
+      "w": 1
     },
     {
+      "col": 1,
+      "color": "#38571a",
+      "h": 1,
+      "icon": null,
       "id": "c28c33f8-81d5-43fc-a51c-d2c9896033db",
-      "type": "preset",
+      "label": "Studio 2 OB",
       "preset_id": "8eccf076-d1bb-4a01-ac43-dcf12a7722d2",
       "row": 1,
-      "col": 1,
-      "w": 1,
-      "h": 1,
-      "label": "Studio 2 OB",
-      "icon": null,
-      "color": "#38571a"
+      "type": "preset",
+      "w": 1
     },
     {
       "col": 0,
@@ -63,16 +63,16 @@
       "w": 1
     },
     {
+      "col": 2,
+      "color": "#f5ec00",
+      "h": 1,
+      "icon": "fas fa-radiation",
       "id": "eb3475b2-0290-41ed-aef3-513d93b27511",
-      "type": "preset",
+      "label": "Bypass Delay",
       "preset_id": "8eccf076-d1bb-4a01-ac43-dcf12a7722d2",
       "row": 1,
-      "col": 2,
-      "w": 1,
-      "h": 1,
-      "label": "Bypass Delay",
-      "icon": "fas fa-radiation",
-      "color": "#f5ec00"
+      "type": "preset",
+      "w": 1
     }
   ]
 }

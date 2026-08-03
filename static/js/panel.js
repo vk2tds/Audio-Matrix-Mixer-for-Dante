@@ -150,13 +150,23 @@ function buildPanelButton(btn) {
     const label = btn.label || (preset ? preset.name : "(missing preset)");
     el.innerHTML = `${iconMarkup(btn.icon)}<span>${escapeHtml(label)}</span>`;
 
-    if (!editMode && !missing) {
+    if (btn.readonly) {
+      el.classList.add("panel-button-readonly");
+      el.title = "Read-only — lights up automatically, not clickable";
+    }
+
+    if (!editMode && !missing && !btn.readonly) {
       el.addEventListener("click", () => pressPanelButton(btn));
     }
   }
 
   if (editMode) {
     el.classList.add("panel-button-editing");
+    el.draggable = true;
+    el.addEventListener("dragstart", (e) => {
+      e.dataTransfer.effectAllowed = "move";
+      e.dataTransfer.setData("text/plain", btn.id);
+    });
     el.addEventListener("click", (e) => {
       e.stopPropagation();
       openEditDialog(btn);
@@ -166,6 +176,24 @@ function buildPanelButton(btn) {
   return el;
 }
 
+async function moveButtonTo(id, row, col) {
+  const btn = panelData.buttons.find((b) => b.id === id);
+  if (!btn) return;
+  if (btn.row === row && btn.col === col) return;
+  if (!fitsInGrid(row, col, btn.w, btn.h, id)) {
+    showToast("Won't fit there", true);
+    return;
+  }
+  btn.row = row;
+  btn.col = col;
+  try {
+    await persistPanel();
+    renderGrid();
+  } catch (err) {
+    showToast(err.message, true);
+  }
+}
+
 function buildEmptyCell(row, col) {
   const el = document.createElement("div");
   el.className = "panel-cell-empty";
@@ -173,6 +201,17 @@ function buildEmptyCell(row, col) {
   el.style.gridRow = `${row + 1} / span 1`;
   el.textContent = "+";
   el.addEventListener("click", () => openAddDialog(row, col));
+  el.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    el.classList.add("panel-cell-drop-target");
+  });
+  el.addEventListener("dragleave", () => el.classList.remove("panel-cell-drop-target"));
+  el.addEventListener("drop", (e) => {
+    e.preventDefault();
+    el.classList.remove("panel-cell-drop-target");
+    const id = e.dataTransfer.getData("text/plain");
+    moveButtonTo(id, row, col);
+  });
   return el;
 }
 
@@ -270,6 +309,7 @@ function openAddDialog(row, col) {
   document.getElementById("panel-dialog-h").value = "1";
   document.getElementById("panel-dialog-color-enabled").checked = false;
   document.getElementById("panel-dialog-color").value = "#2563eb";
+  document.getElementById("panel-dialog-readonly").checked = false;
   setDialogIcon(null);
   populatePresetSelect();
   syncDialogTypeVisibility();
@@ -292,6 +332,7 @@ function openEditDialog(btn) {
   document.getElementById("panel-dialog-h").value = String(btn.h);
   document.getElementById("panel-dialog-color-enabled").checked = Boolean(btn.color);
   document.getElementById("panel-dialog-color").value = btn.color || "#2563eb";
+  document.getElementById("panel-dialog-readonly").checked = Boolean(btn.readonly);
   setDialogIcon(btn.icon);
   syncDialogTypeVisibility();
   document.getElementById("panel-icon-picker-wrap").style.display = "none";
@@ -309,6 +350,7 @@ function syncDialogTypeVisibility() {
   const type = document.getElementById("panel-dialog-type").value;
   document.getElementById("panel-dialog-preset-row").style.display = type === "label" ? "none" : "flex";
   document.getElementById("panel-dialog-icon-row").style.display = type === "label" ? "none" : "flex";
+  document.getElementById("panel-dialog-readonly-row").style.display = type === "label" ? "none" : "flex";
 }
 
 const ICON_PICKER_RENDER_CAP = 240;
@@ -354,6 +396,7 @@ async function saveDialogButton() {
   const colorEnabled = document.getElementById("panel-dialog-color-enabled").checked;
   const color = colorEnabled ? document.getElementById("panel-dialog-color").value : null;
   const icon = type === "label" ? null : (document.getElementById("panel-dialog-icon-preview").dataset.icon || null);
+  const readonly = type === "label" ? false : document.getElementById("panel-dialog-readonly").checked;
 
   if (type === "label" && !text) {
     showToast("Label buttons need text", true);
@@ -386,6 +429,7 @@ async function saveDialogButton() {
     label: text || null,
     icon,
     color,
+    readonly,
   };
 
   if (type !== "label" && !btn.preset_id) {

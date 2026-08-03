@@ -6,8 +6,10 @@
     A grid of buttons for your saved routing presets. Press a button to apply its preset; press it again to reverse
     it (unsubscribes what it added, restores what it removed, where possible). Multiple buttons can be lit at once.
     A button glows at half intensity when its preset's rules already hold true on the live matrix, even if you
-    didn't press it. Label buttons are just static text, for grouping. Press state and rule-matching are live —
-    layout (position, size, text, icon, colour) is saved to disk.
+    didn't press it. Label buttons are just static text, for grouping. A read-only button can't be pressed by
+    clicking, but still lights up automatically when its preset's rules match live. In edit mode, drag a button
+    onto an empty cell to move it. Press state and rule-matching are live — layout (position, size, text, icon,
+    colour) is saved to disk.
   </div>
   <div class="hint-row">
     <div class="hint-row-buttons">
@@ -62,6 +64,12 @@
         <input type="checkbox" id="panel-dialog-color-enabled" style="width:16px;height:16px;"> custom colour
       </label>
     </div>
+  </div>
+  <div class="save-dialog-row" id="panel-dialog-readonly-row">
+    <label for="panel-dialog-readonly">Read-only</label>
+    <label style="display:flex;align-items:center;gap:6px;width:auto;color:var(--text-dim);font-size:13px;">
+      <input type="checkbox" id="panel-dialog-readonly" style="width:16px;height:16px;"> clicking does nothing — still lights up automatically
+    </label>
   </div>
   <div class="save-dialog-row">
     <label for="panel-dialog-w">Width</label>

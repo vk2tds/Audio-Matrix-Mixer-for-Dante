@@ -887,6 +887,10 @@ table.matrix th.group-col-span {
   border-color: var(--accent);
 }
 
+.panel-button-readonly:hover {
+  border-color: var(--border);
+}
+
 .panel-button-lit {
   background: var(--good);
   border-color: var(--good);
@@ -917,9 +921,13 @@ table.matrix th.group-col-span {
 }
 
 .panel-button-editing {
-  cursor: pointer;
+  cursor: grab;
   outline: 1px dashed var(--border);
   outline-offset: 2px;
+}
+
+.panel-button-readonly {
+  cursor: default;
 }
 
 .panel-cell-empty {
@@ -935,6 +943,13 @@ table.matrix th.group-col-span {
 
 .panel-cell-empty:hover {
   border-color: var(--accent);
+  color: var(--accent);
+}
+
+.panel-cell-drop-target {
+  border-color: var(--accent);
+  border-style: solid;
+  background: var(--accent-dim);
   color: var(--accent);
 }
 
