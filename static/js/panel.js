@@ -1,6 +1,8 @@
 // Preset control panel: a grid of buttons, each optionally pointing at a
 // saved routing preset. Pressing a preset button applies its preset;
 // pressing again reverses it. Label buttons are static text, not clickable.
+// Device-present buttons light up whenever a chosen Dante device is online;
+// they're never clickable either — pure live status indicators.
 //
 // Two independent "lit" signals are combined when rendering a preset button:
 //   - explicitly pressed (local, this browser tab's press/reverse toggles)
@@ -90,6 +92,11 @@ function presetMeetsRules(preset, devices) {
   return preset.actions.every((action) => actionHoldsLive(action, devices));
 }
 
+function isDevicePresent(deviceName, devices) {
+  if (!deviceName) return false;
+  return Object.values(devices).some((d) => (d.name || d.server_name) === deviceName && d.online !== false);
+}
+
 async function recomputeRuleMatches() {
   const presetIds = new Set(
     panelData.buttons.filter((b) => b.type !== "label" && b.preset_id).map((b) => b.preset_id)
@@ -122,6 +129,26 @@ function buildPanelButton(btn) {
     if (btn.color) {
       el.style.color = btn.color;
     }
+  } else if (btn.type === "device") {
+    const present = isDevicePresent(btn.device_name, liveDevices);
+
+    el.className = "panel-button panel-button-readonly";
+    el.title = "Lights up automatically when this device is online — not clickable";
+    if (present) el.classList.add("panel-button-lit");
+
+    const color = btn.color;
+    if (color) {
+      if (present) {
+        el.style.background = color;
+        el.style.borderColor = color;
+        el.style.color = bestTextColor(color);
+      } else {
+        el.style.borderColor = color;
+      }
+    }
+
+    const label = btn.label || btn.device_name || "(no device)";
+    el.innerHTML = `${iconMarkup(btn.icon)}<span>${escapeHtml(label)}</span>`;
   } else {
     const preset = presetDetailCache.get(btn.preset_id) || allPresets.find((p) => p.id === btn.preset_id);
     const missing = !preset;
@@ -290,6 +317,19 @@ function populatePresetSelect() {
   select.innerHTML = allPresets.map((p) => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join("");
 }
 
+function populateDeviceSelect(selectedName) {
+  const select = document.getElementById("panel-dialog-device");
+  const names = new Set(
+    Object.values(liveDevices)
+      .map((d) => d.name || d.server_name)
+      .filter(Boolean)
+  );
+  if (selectedName) names.add(selectedName);
+  const sorted = [...names].sort((a, b) => a.localeCompare(b));
+  select.innerHTML = sorted.map((n) => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join("");
+  if (selectedName) select.value = selectedName;
+}
+
 function setDialogIcon(iconClass) {
   document.getElementById("panel-dialog-icon-preview").innerHTML = iconMarkup(iconClass);
   document.getElementById("panel-dialog-icon-preview").dataset.icon = iconClass || "";
@@ -312,6 +352,7 @@ function openAddDialog(row, col) {
   document.getElementById("panel-dialog-readonly").checked = false;
   setDialogIcon(null);
   populatePresetSelect();
+  populateDeviceSelect();
   syncDialogTypeVisibility();
   document.getElementById("panel-icon-picker-wrap").style.display = "none";
   document.getElementById("panel-button-dialog").style.display = "block";
@@ -324,7 +365,8 @@ function openEditDialog(btn) {
   document.getElementById("panel-dialog-delete-btn").style.display = "inline-block";
   document.getElementById("panel-dialog-type").value = btn.type || "preset";
   populatePresetSelect();
-  if (btn.type !== "label" && btn.preset_id) {
+  populateDeviceSelect(btn.type === "device" ? btn.device_name : null);
+  if (btn.type === "preset" && btn.preset_id) {
     document.getElementById("panel-dialog-preset").value = btn.preset_id;
   }
   document.getElementById("panel-dialog-text").value = btn.label || "";
@@ -348,9 +390,10 @@ function closeDialog() {
 
 function syncDialogTypeVisibility() {
   const type = document.getElementById("panel-dialog-type").value;
-  document.getElementById("panel-dialog-preset-row").style.display = type === "label" ? "none" : "flex";
+  document.getElementById("panel-dialog-preset-row").style.display = type === "preset" ? "flex" : "none";
+  document.getElementById("panel-dialog-device-row").style.display = type === "device" ? "flex" : "none";
   document.getElementById("panel-dialog-icon-row").style.display = type === "label" ? "none" : "flex";
-  document.getElementById("panel-dialog-readonly-row").style.display = type === "label" ? "none" : "flex";
+  document.getElementById("panel-dialog-readonly-row").style.display = type === "preset" ? "flex" : "none";
 }
 
 const ICON_PICKER_RENDER_CAP = 240;
@@ -396,10 +439,15 @@ async function saveDialogButton() {
   const colorEnabled = document.getElementById("panel-dialog-color-enabled").checked;
   const color = colorEnabled ? document.getElementById("panel-dialog-color").value : null;
   const icon = type === "label" ? null : (document.getElementById("panel-dialog-icon-preview").dataset.icon || null);
-  const readonly = type === "label" ? false : document.getElementById("panel-dialog-readonly").checked;
+  const readonly = type === "preset" && document.getElementById("panel-dialog-readonly").checked;
+  const deviceName = type === "device" ? document.getElementById("panel-dialog-device").value : null;
 
   if (type === "label" && !text) {
     showToast("Label buttons need text", true);
+    return;
+  }
+  if (type === "device" && !deviceName) {
+    showToast("Choose a device", true);
     return;
   }
 
@@ -421,7 +469,8 @@ async function saveDialogButton() {
   const btn = {
     id: editingButtonId || newId(),
     type,
-    preset_id: type === "label" ? null : document.getElementById("panel-dialog-preset").value,
+    preset_id: type === "preset" ? document.getElementById("panel-dialog-preset").value : null,
+    device_name: deviceName,
     row,
     col,
     w,
@@ -432,7 +481,7 @@ async function saveDialogButton() {
     readonly,
   };
 
-  if (type !== "label" && !btn.preset_id) {
+  if (type === "preset" && !btn.preset_id) {
     showToast("Choose a preset", true);
     return;
   }
@@ -447,7 +496,7 @@ async function saveDialogButton() {
   try {
     await persistPanel();
     closeDialog();
-    if (btn.type !== "label") await ensurePresetDetail(btn.preset_id);
+    if (btn.type === "preset") await ensurePresetDetail(btn.preset_id);
     renderGrid();
     recomputeRuleMatches();
   } catch (err) {

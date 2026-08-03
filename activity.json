@@ -768,5 +768,395 @@
     },
     "ok": false,
     "error": "2 action(s) failed"
+  },
+  {
+    "timestamp": 1785745887.6323562,
+    "kind": "panel:press",
+    "detail": {
+      "preset_id": "8eccf076-d1bb-4a01-ac43-dcf12a7722d2",
+      "preset_name": "Test",
+      "on": true,
+      "applied": 1,
+      "total": 3
+    },
+    "ok": false,
+    "error": "2 action(s) failed"
+  },
+  {
+    "timestamp": 1785746015.947102,
+    "kind": "panel:press",
+    "detail": {
+      "preset_id": "f306fac4-137b-46da-96d4-8cf65fd11f60",
+      "preset_name": "Two",
+      "on": true,
+      "applied": 2,
+      "total": 4
+    },
+    "ok": false,
+    "error": "2 action(s) failed"
+  },
+  {
+    "timestamp": 1785746016.775757,
+    "kind": "panel:press",
+    "detail": {
+      "preset_id": "f306fac4-137b-46da-96d4-8cf65fd11f60",
+      "preset_name": "Two",
+      "on": false,
+      "applied": 2,
+      "total": 4
+    },
+    "ok": false,
+    "error": "2 action(s) failed"
+  },
+  {
+    "timestamp": 1785746017.550226,
+    "kind": "panel:press",
+    "detail": {
+      "preset_id": "8eccf076-d1bb-4a01-ac43-dcf12a7722d2",
+      "preset_name": "Test",
+      "on": false,
+      "applied": 1,
+      "total": 3
+    },
+    "ok": false,
+    "error": "2 action(s) failed"
+  },
+  {
+    "timestamp": 1785746018.2772071,
+    "kind": "panel:press",
+    "detail": {
+      "preset_id": "8eccf076-d1bb-4a01-ac43-dcf12a7722d2",
+      "preset_name": "Test",
+      "on": true,
+      "applied": 1,
+      "total": 3
+    },
+    "ok": false,
+    "error": "2 action(s) failed"
+  },
+  {
+    "timestamp": 1785746019.43903,
+    "kind": "panel:press",
+    "detail": {
+      "preset_id": "8eccf076-d1bb-4a01-ac43-dcf12a7722d2",
+      "preset_name": "Test",
+      "on": false,
+      "applied": 1,
+      "total": 3
+    },
+    "ok": false,
+    "error": "2 action(s) failed"
+  },
+  {
+    "timestamp": 1785746020.02432,
+    "kind": "panel:press",
+    "detail": {
+      "preset_id": "8eccf076-d1bb-4a01-ac43-dcf12a7722d2",
+      "preset_name": "Test",
+      "on": true,
+      "applied": 1,
+      "total": 3
+    },
+    "ok": false,
+    "error": "2 action(s) failed"
+  },
+  {
+    "timestamp": 1785746029.621293,
+    "kind": "panel:press",
+    "detail": {
+      "preset_id": "8eccf076-d1bb-4a01-ac43-dcf12a7722d2",
+      "preset_name": "Test",
+      "on": false,
+      "applied": 1,
+      "total": 3
+    },
+    "ok": false,
+    "error": "2 action(s) failed"
+  },
+  {
+    "timestamp": 1785746030.226567,
+    "kind": "panel:press",
+    "detail": {
+      "preset_id": "8eccf076-d1bb-4a01-ac43-dcf12a7722d2",
+      "preset_name": "Test",
+      "on": true,
+      "applied": 1,
+      "total": 3
+    },
+    "ok": false,
+    "error": "2 action(s) failed"
+  },
+  {
+    "timestamp": 1785746030.2399318,
+    "kind": "panel:press",
+    "detail": {
+      "preset_id": "8eccf076-d1bb-4a01-ac43-dcf12a7722d2",
+      "preset_name": "Test",
+      "on": true,
+      "applied": 1,
+      "total": 3
+    },
+    "ok": false,
+    "error": "2 action(s) failed"
+  },
+  {
+    "timestamp": 1785746030.85615,
+    "kind": "panel:press",
+    "detail": {
+      "preset_id": "8eccf076-d1bb-4a01-ac43-dcf12a7722d2",
+      "preset_name": "Test",
+      "on": false,
+      "applied": 1,
+      "total": 3
+    },
+    "ok": false,
+    "error": "2 action(s) failed"
+  },
+  {
+    "timestamp": 1785746031.420821,
+    "kind": "panel:press",
+    "detail": {
+      "preset_id": "8eccf076-d1bb-4a01-ac43-dcf12a7722d2",
+      "preset_name": "Test",
+      "on": true,
+      "applied": 1,
+      "total": 3
+    },
+    "ok": false,
+    "error": "2 action(s) failed"
+  },
+  {
+    "timestamp": 1785746031.88252,
+    "kind": "panel:press",
+    "detail": {
+      "preset_id": "8eccf076-d1bb-4a01-ac43-dcf12a7722d2",
+      "preset_name": "Test",
+      "on": false,
+      "applied": 1,
+      "total": 3
+    },
+    "ok": false,
+    "error": "2 action(s) failed"
+  },
+  {
+    "timestamp": 1785746032.403958,
+    "kind": "panel:press",
+    "detail": {
+      "preset_id": "8eccf076-d1bb-4a01-ac43-dcf12a7722d2",
+      "preset_name": "Test",
+      "on": true,
+      "applied": 1,
+      "total": 3
+    },
+    "ok": false,
+    "error": "2 action(s) failed"
+  },
+  {
+    "timestamp": 1785746032.83379,
+    "kind": "panel:press",
+    "detail": {
+      "preset_id": "8eccf076-d1bb-4a01-ac43-dcf12a7722d2",
+      "preset_name": "Test",
+      "on": false,
+      "applied": 1,
+      "total": 3
+    },
+    "ok": false,
+    "error": "2 action(s) failed"
+  },
+  {
+    "timestamp": 1785746033.303738,
+    "kind": "panel:press",
+    "detail": {
+      "preset_id": "8eccf076-d1bb-4a01-ac43-dcf12a7722d2",
+      "preset_name": "Test",
+      "on": true,
+      "applied": 1,
+      "total": 3
+    },
+    "ok": false,
+    "error": "2 action(s) failed"
+  },
+  {
+    "timestamp": 1785746033.793532,
+    "kind": "panel:press",
+    "detail": {
+      "preset_id": "8eccf076-d1bb-4a01-ac43-dcf12a7722d2",
+      "preset_name": "Test",
+      "on": false,
+      "applied": 1,
+      "total": 3
+    },
+    "ok": false,
+    "error": "2 action(s) failed"
+  },
+  {
+    "timestamp": 1785746034.292311,
+    "kind": "panel:press",
+    "detail": {
+      "preset_id": "8eccf076-d1bb-4a01-ac43-dcf12a7722d2",
+      "preset_name": "Test",
+      "on": true,
+      "applied": 1,
+      "total": 3
+    },
+    "ok": false,
+    "error": "2 action(s) failed"
+  },
+  {
+    "timestamp": 1785746034.9777632,
+    "kind": "panel:press",
+    "detail": {
+      "preset_id": "8eccf076-d1bb-4a01-ac43-dcf12a7722d2",
+      "preset_name": "Test",
+      "on": false,
+      "applied": 1,
+      "total": 3
+    },
+    "ok": false,
+    "error": "2 action(s) failed"
+  },
+  {
+    "timestamp": 1785746035.4445188,
+    "kind": "panel:press",
+    "detail": {
+      "preset_id": "8eccf076-d1bb-4a01-ac43-dcf12a7722d2",
+      "preset_name": "Test",
+      "on": true,
+      "applied": 1,
+      "total": 3
+    },
+    "ok": false,
+    "error": "2 action(s) failed"
+  },
+  {
+    "timestamp": 1785746036.0687401,
+    "kind": "panel:press",
+    "detail": {
+      "preset_id": "8eccf076-d1bb-4a01-ac43-dcf12a7722d2",
+      "preset_name": "Test",
+      "on": false,
+      "applied": 1,
+      "total": 3
+    },
+    "ok": false,
+    "error": "2 action(s) failed"
+  },
+  {
+    "timestamp": 1785746036.608023,
+    "kind": "panel:press",
+    "detail": {
+      "preset_id": "8eccf076-d1bb-4a01-ac43-dcf12a7722d2",
+      "preset_name": "Test",
+      "on": true,
+      "applied": 1,
+      "total": 3
+    },
+    "ok": false,
+    "error": "2 action(s) failed"
+  },
+  {
+    "timestamp": 1785746037.202639,
+    "kind": "panel:press",
+    "detail": {
+      "preset_id": "8eccf076-d1bb-4a01-ac43-dcf12a7722d2",
+      "preset_name": "Test",
+      "on": false,
+      "applied": 1,
+      "total": 3
+    },
+    "ok": false,
+    "error": "2 action(s) failed"
+  },
+  {
+    "timestamp": 1785746037.721575,
+    "kind": "panel:press",
+    "detail": {
+      "preset_id": "8eccf076-d1bb-4a01-ac43-dcf12a7722d2",
+      "preset_name": "Test",
+      "on": true,
+      "applied": 1,
+      "total": 3
+    },
+    "ok": false,
+    "error": "2 action(s) failed"
+  },
+  {
+    "timestamp": 1785746043.692209,
+    "kind": "panel:press",
+    "detail": {
+      "preset_id": "f306fac4-137b-46da-96d4-8cf65fd11f60",
+      "preset_name": "Two",
+      "on": true,
+      "applied": 2,
+      "total": 4
+    },
+    "ok": false,
+    "error": "2 action(s) failed"
+  },
+  {
+    "timestamp": 1785746044.7032819,
+    "kind": "panel:press",
+    "detail": {
+      "preset_id": "f306fac4-137b-46da-96d4-8cf65fd11f60",
+      "preset_name": "Two",
+      "on": false,
+      "applied": 2,
+      "total": 4
+    },
+    "ok": false,
+    "error": "2 action(s) failed"
+  },
+  {
+    "timestamp": 1785746075.64048,
+    "kind": "panel:press",
+    "detail": {
+      "preset_id": "f306fac4-137b-46da-96d4-8cf65fd11f60",
+      "preset_name": "Two",
+      "on": true,
+      "applied": 2,
+      "total": 4
+    },
+    "ok": false,
+    "error": "2 action(s) failed"
+  },
+  {
+    "timestamp": 1785746077.6465862,
+    "kind": "panel:press",
+    "detail": {
+      "preset_id": "f306fac4-137b-46da-96d4-8cf65fd11f60",
+      "preset_name": "Two",
+      "on": false,
+      "applied": 2,
+      "total": 4
+    },
+    "ok": false,
+    "error": "2 action(s) failed"
+  },
+  {
+    "timestamp": 1785746078.656349,
+    "kind": "panel:press",
+    "detail": {
+      "preset_id": "f306fac4-137b-46da-96d4-8cf65fd11f60",
+      "preset_name": "Two",
+      "on": false,
+      "applied": 2,
+      "total": 4
+    },
+    "ok": false,
+    "error": "2 action(s) failed"
+  },
+  {
+    "timestamp": 1785746078.682986,
+    "kind": "panel:press",
+    "detail": {
+      "preset_id": "f306fac4-137b-46da-96d4-8cf65fd11f60",
+      "preset_name": "Two",
+      "on": false,
+      "applied": 2,
+      "total": 4
+    },
+    "ok": false,
+    "error": "2 action(s) failed"
   }
 ]

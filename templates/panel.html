@@ -7,9 +7,10 @@
     it (unsubscribes what it added, restores what it removed, where possible). Multiple buttons can be lit at once.
     A button glows at half intensity when its preset's rules already hold true on the live matrix, even if you
     didn't press it. Label buttons are just static text, for grouping. A read-only button can't be pressed by
-    clicking, but still lights up automatically when its preset's rules match live. In edit mode, drag a button
-    onto an empty cell to move it. Press state and rule-matching are live — layout (position, size, text, icon,
-    colour) is saved to disk.
+    clicking, but still lights up automatically when its preset's rules match live. A device-present button lights
+    up whenever a chosen Dante device is online — it's never clickable. In edit mode, drag a button onto an empty
+    cell to move it. Press state, rule-matching and device presence are all live — layout (position, size, text,
+    icon, colour) is saved to disk.
   </div>
   <div class="hint-row">
     <div class="hint-row-buttons">
@@ -37,12 +38,17 @@
     <label for="panel-dialog-type">Type</label>
     <select id="panel-dialog-type">
       <option value="preset">Preset button</option>
+      <option value="device">Device present</option>
       <option value="label">Label only</option>
     </select>
   </div>
   <div class="save-dialog-row" id="panel-dialog-preset-row">
     <label for="panel-dialog-preset">Preset</label>
     <select id="panel-dialog-preset"></select>
+  </div>
+  <div class="save-dialog-row" id="panel-dialog-device-row">
+    <label for="panel-dialog-device">Device</label>
+    <select id="panel-dialog-device"></select>
   </div>
   <div class="save-dialog-row">
     <label for="panel-dialog-text">Text</label>
