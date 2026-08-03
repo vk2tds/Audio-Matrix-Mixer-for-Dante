@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}Panel – Dante Web{% endblock %}
+{% block content %}
+<div class="panel">
+  <div class="hint">
+    A grid of buttons for your saved routing presets. Press a button to apply its preset; press it again to reverse
+    it (unsubscribes what it added, restores what it removed, where possible). Multiple buttons can be lit at once.
+    A button glows at half intensity when its preset's rules already hold true on the live matrix, even if you
+    didn't press it. Label buttons are just static text, for grouping. Press state and rule-matching are live —
+    layout (position, size, text, icon, colour) is saved to disk.
+  </div>
+  <div class="hint-row">
+    <div class="hint-row-buttons">
+      <label style="display:flex;align-items:center;gap:6px;">Columns <input type="number" id="panel-cols" min="1" max="24" style="width:60px;"></label>
+      <label style="display:flex;align-items:center;gap:6px;">Rows <input type="number" id="panel-rows" min="1" max="24" style="width:60px;"></label>
+      <button type="button" id="panel-resize-btn">Resize</button>
+    </div>
+    <div class="hint-row-buttons">
+      <button type="button" id="panel-edit-toggle-btn">Edit layout</button>
+    </div>
+  </div>
+</div>
+
+<div class="panel">
+  <div id="panel-grid" class="panel-grid"></div>
+  <div class="hint" id="panel-empty-hint" style="display: none; text-align: center; padding: 24px 0;">
+    No buttons yet. Click "Edit layout" above, then click an empty cell to add one.
+  </div>
+</div>
+
+<div class="panel" id="panel-button-dialog" style="display: none;">
+  <div class="hint" id="panel-button-dialog-hint">Add button</div>
+
+  <div class="save-dialog-row">
+    <label for="panel-dialog-type">Type</label>
+    <select id="panel-dialog-type">
+      <option value="preset">Preset button</option>
+      <option value="label">Label only</option>
+    </select>
+  </div>
+  <div class="save-dialog-row" id="panel-dialog-preset-row">
+    <label for="panel-dialog-preset">Preset</label>
+    <select id="panel-dialog-preset"></select>
+  </div>
+  <div class="save-dialog-row">
+    <label for="panel-dialog-text">Text</label>
+    <input type="text" id="panel-dialog-text" placeholder="Defaults to preset name">
+  </div>
+  <div class="save-dialog-row" id="panel-dialog-icon-row">
+    <label>Icon</label>
+    <div style="flex:1;display:flex;align-items:center;gap:10px;">
+      <span id="panel-dialog-icon-preview" style="width:30px;height:30px;display:flex;align-items:center;justify-content:center;background:var(--panel-alt);border:1px solid var(--border);border-radius:var(--radius);"></span>
+      <button type="button" id="panel-dialog-icon-pick-btn">Choose icon…</button>
+      <button type="button" id="panel-dialog-icon-clear-btn">None</button>
+    </div>
+  </div>
+  <div class="save-dialog-row" id="panel-dialog-color-row">
+    <label for="panel-dialog-color">Colour</label>
+    <div style="flex:1;display:flex;align-items:center;gap:10px;">
+      <input type="color" id="panel-dialog-color" value="#2563eb">
+      <label style="display:flex;align-items:center;gap:6px;width:auto;color:var(--text-dim);font-size:13px;">
+        <input type="checkbox" id="panel-dialog-color-enabled" style="width:16px;height:16px;"> custom colour
+      </label>
+    </div>
+  </div>
+  <div class="save-dialog-row">
+    <label for="panel-dialog-w">Width</label>
+    <select id="panel-dialog-w">
+      <option value="1">1</option>
+      <option value="2">2</option>
+      <option value="3">3</option>
+    </select>
+  </div>
+  <div class="save-dialog-row">
+    <label for="panel-dialog-h">Height</label>
+    <select id="panel-dialog-h">
+      <option value="1">1</option>
+      <option value="2">2</option>
+      <option value="3">3</option>
+    </select>
+  </div>
+
+  <div id="panel-icon-picker" class="panel-icon-picker" style="display: none;"></div>
+
+  <div class="button-row">
+    <button type="button" id="panel-dialog-save-btn" class="primary">Save</button>
+    <button type="button" id="panel-dialog-delete-btn" style="display:none;">Delete</button>
+    <button type="button" id="panel-dialog-cancel-btn">Cancel</button>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/panel-icons.js') }}"></script>
+<script src="{{ url_for('static', filename='js/panel.js') }}"></script>
+{% endblock %}

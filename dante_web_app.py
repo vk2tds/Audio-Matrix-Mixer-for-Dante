@@ -8,6 +8,7 @@ import activity_log
 import designs_store
 import netaudio_cli
 import netaudio_client as relay
+import panel_store
 import presets_store
 
 app = Flask(__name__)
@@ -85,6 +86,11 @@ def activity_page():
 @app.route("/design")
 def design_page():
     return render_template("design.html")
+
+
+@app.route("/panel")
+def panel_page():
+    return render_template("panel.html")
 
 
 # --- API proxy ---------------------------------------------------------
@@ -265,6 +271,77 @@ def api_apply_preset(pid):
     activity_log.log_event(
         "preset:apply",
         {"preset_id": pid, "preset_name": preset["name"], "applied": applied, "total": len(results)},
+        ok=applied == len(results),
+        error=None if applied == len(results) else f"{len(results) - applied} action(s) failed",
+    )
+    return jsonify({"success": True, "applied": applied, "total": len(results), "results": results})
+
+
+# --- Preset panel ------------------------------------------------------------
+# A grid of buttons, each pointing at an existing preset. Pressing a button
+# applies the preset (same semantics as /apply); pressing it again reverses
+# it — "add" actions get unsubscribed, "remove" actions get resubscribed to
+# whatever baseline they recorded at the time (nothing to do if there wasn't
+# one). Lit/pressed state itself is tracked client-side, not here — this
+# only stores the grid layout.
+
+
+@app.route("/api/panel")
+def api_get_panel():
+    return jsonify(panel_store.get_panel())
+
+
+@app.route("/api/panel", methods=["POST"])
+def api_save_panel():
+    body = request.get_json(force=True, silent=True) or {}
+    try:
+        cols = int(body.get("cols") or 8)
+        rows = int(body.get("rows") or 4)
+    except (TypeError, ValueError):
+        return jsonify({"error": "cols and rows must be integers"}), 400
+    buttons = body.get("buttons")
+    if not isinstance(buttons, list):
+        return jsonify({"error": "buttons must be a list"}), 400
+    data = panel_store.save_panel(cols, rows, buttons)
+    return jsonify({"success": True, **data})
+
+
+@app.route("/api/panel/press/<pid>", methods=["POST"])
+def api_panel_press(pid):
+    body = request.get_json(force=True, silent=True) or {}
+    turn_on = bool(body.get("on", True))
+
+    preset = presets_store.get_preset(pid)
+    if preset is None:
+        return jsonify({"error": "preset not found"}), 404
+
+    results = []
+    for action in preset["actions"]:
+        try:
+            if turn_on:
+                if action["action"] == "add":
+                    data, status = relay.subscribe(
+                        action["rx_device"], action["rx_channel"], action["tx_channel"], action["tx_device"]
+                    )
+                else:
+                    data, status = relay.unsubscribe(action["rx_device"], action["rx_channel"])
+            else:
+                if action["action"] == "add":
+                    data, status = relay.unsubscribe(action["rx_device"], action["rx_channel"])
+                elif action.get("tx_device"):
+                    data, status = relay.subscribe(
+                        action["rx_device"], action["rx_channel"], action["tx_channel"], action["tx_device"]
+                    )
+                else:
+                    data, status = {"success": True, "note": "nothing to reverse"}, 200
+            results.append({**action, "ok": status < 400, "response": data})
+        except relay.RelayError as exc:
+            results.append({**action, "ok": False, "response": {"error": str(exc)}})
+
+    applied = sum(1 for r in results if r["ok"])
+    activity_log.log_event(
+        "panel:press",
+        {"preset_id": pid, "preset_name": preset["name"], "on": turn_on, "applied": applied, "total": len(results)},
         ok=applied == len(results),
         error=None if applied == len(results) else f"{len(results) - applied} action(s) failed",
     )

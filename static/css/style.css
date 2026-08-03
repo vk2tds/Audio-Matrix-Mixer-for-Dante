@@ -848,3 +848,114 @@ table.matrix th.group-col-span {
   height: auto;
   padding: 6px 4px;
 }
+
+/* Preset panel */
+.panel-grid {
+  display: grid;
+  gap: 8px;
+}
+
+.panel-button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: var(--panel-alt);
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  cursor: pointer;
+  padding: 6px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 500;
+  overflow: hidden;
+  transition: background 120ms, border-color 120ms, box-shadow 120ms;
+}
+
+.panel-button i {
+  font-size: 20px;
+}
+
+.panel-button span {
+  overflow-wrap: anywhere;
+  line-height: 1.2;
+}
+
+.panel-button:hover {
+  border-color: var(--accent);
+}
+
+.panel-button-lit {
+  background: var(--good);
+  border-color: var(--good);
+  color: #fff;
+  box-shadow: 0 0 0 3px var(--shadow);
+}
+
+.panel-button-half-lit {
+  background: color-mix(in srgb, var(--good) 40%, var(--panel-alt));
+  border-color: var(--good);
+}
+
+.panel-button-missing {
+  cursor: default;
+  color: var(--text-dim);
+  background: repeating-linear-gradient(45deg, var(--border), var(--border) 4px, var(--panel) 4px, var(--panel) 8px);
+}
+
+.panel-button-label {
+  cursor: default;
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: 0.03em;
+}
+
+.panel-button-editing {
+  cursor: pointer;
+  outline: 1px dashed var(--border);
+  outline-offset: 2px;
+}
+
+.panel-cell-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  color: var(--text-dim);
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.panel-cell-empty:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.panel-icon-picker {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
+  gap: 6px;
+  max-height: 220px;
+  overflow-y: auto;
+  margin: 10px 0;
+  padding: 10px;
+  background: var(--panel-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.panel-icon-choice {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

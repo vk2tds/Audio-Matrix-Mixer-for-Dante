@@ -1,1 +1,200 @@
-[]
+[
+  {
+    "timestamp": 1785579451.1750221,
+    "kind": "/subscribe",
+    "detail": {
+      "rx_device": "Mini-Garage",
+      "rx_channel": 3,
+      "tx_channel": "27",
+      "tx_device": "Mini-Garage"
+    },
+    "ok": true,
+    "error": null
+  },
+  {
+    "timestamp": 1785579457.536821,
+    "kind": "/subscribe",
+    "detail": {
+      "rx_device": "DA11ADE-83b8e8",
+      "rx_channel": 2,
+      "tx_channel": "21",
+      "tx_device": "Mini-Garage"
+    },
+    "ok": true,
+    "error": null
+  },
+  {
+    "timestamp": 1785579466.683688,
+    "kind": "/subscribe",
+    "detail": {
+      "rx_device": "Mini-Garage",
+      "rx_channel": 2,
+      "tx_channel": "21",
+      "tx_device": "Mini-Garage"
+    },
+    "ok": true,
+    "error": null
+  },
+  {
+    "timestamp": 1785623686.286744,
+    "kind": "/refresh",
+    "detail": {},
+    "ok": true,
+    "error": null
+  },
+  {
+    "timestamp": 1785623712.245713,
+    "kind": "daemon:restart",
+    "detail": {
+      "pid": 43464
+    },
+    "ok": true,
+    "error": null
+  },
+  {
+    "timestamp": 1785663914.70006,
+    "kind": "/subscribe",
+    "detail": {
+      "rx_device": "DA11ADE-83b8e8",
+      "rx_channel": 1,
+      "tx_channel": "CH1",
+      "tx_device": "DA11AEN-83b5a8"
+    },
+    "ok": true,
+    "error": null
+  },
+  {
+    "timestamp": 1785663915.621119,
+    "kind": "/subscribe",
+    "detail": {
+      "rx_device": "DA11ADE-83b8e8",
+      "rx_channel": 2,
+      "tx_channel": "CH2",
+      "tx_device": "DA11AEN-83b5a8"
+    },
+    "ok": true,
+    "error": null
+  },
+  {
+    "timestamp": 1785722864.113183,
+    "kind": "panel:press",
+    "detail": {
+      "preset_id": "8eccf076-d1bb-4a01-ac43-dcf12a7722d2",
+      "preset_name": "Test",
+      "on": true,
+      "applied": 1,
+      "total": 3
+    },
+    "ok": false,
+    "error": "2 action(s) failed"
+  },
+  {
+    "timestamp": 1785722879.736182,
+    "kind": "panel:press",
+    "detail": {
+      "preset_id": "8eccf076-d1bb-4a01-ac43-dcf12a7722d2",
+      "preset_name": "Test",
+      "on": false,
+      "applied": 1,
+      "total": 3
+    },
+    "ok": false,
+    "error": "2 action(s) failed"
+  },
+  {
+    "timestamp": 1785722891.213994,
+    "kind": "preset:apply",
+    "detail": {
+      "preset_id": "8eccf076-d1bb-4a01-ac43-dcf12a7722d2",
+      "preset_name": "Test",
+      "applied": 1,
+      "total": 3
+    },
+    "ok": false,
+    "error": "2 action(s) failed"
+  },
+  {
+    "timestamp": 1785723032.928004,
+    "kind": "preset:apply",
+    "detail": {
+      "preset_id": "f59ec4eb-c05f-4c99-ad8e-dcbed66005cc",
+      "preset_name": "TEMP-panel-verify",
+      "applied": 1,
+      "total": 1
+    },
+    "ok": true,
+    "error": null
+  },
+  {
+    "timestamp": 1785723050.692767,
+    "kind": "panel:press",
+    "detail": {
+      "preset_id": "f59ec4eb-c05f-4c99-ad8e-dcbed66005cc",
+      "preset_name": "TEMP-panel-verify",
+      "on": true,
+      "applied": 1,
+      "total": 1
+    },
+    "ok": true,
+    "error": null
+  },
+  {
+    "timestamp": 1785723058.916189,
+    "kind": "panel:press",
+    "detail": {
+      "preset_id": "f59ec4eb-c05f-4c99-ad8e-dcbed66005cc",
+      "preset_name": "TEMP-panel-verify",
+      "on": false,
+      "applied": 1,
+      "total": 1
+    },
+    "ok": true,
+    "error": null
+  },
+  {
+    "timestamp": 1785723133.8936262,
+    "kind": "panel:press",
+    "detail": {
+      "preset_id": "8eccf076-d1bb-4a01-ac43-dcf12a7722d2",
+      "preset_name": "Test",
+      "on": true,
+      "applied": 1,
+      "total": 3
+    },
+    "ok": false,
+    "error": "2 action(s) failed"
+  },
+  {
+    "timestamp": 1785723140.3819368,
+    "kind": "panel:press",
+    "detail": {
+      "preset_id": "8eccf076-d1bb-4a01-ac43-dcf12a7722d2",
+      "preset_name": "Test",
+      "on": false,
+      "applied": 1,
+      "total": 3
+    },
+    "ok": false,
+    "error": "2 action(s) failed"
+  },
+  {
+    "timestamp": 1785723178.710963,
+    "kind": "/unsubscribe",
+    "detail": {
+      "rx_device": "DA11ADE-83b8e8",
+      "rx_channel": "CH2"
+    },
+    "ok": false,
+    "error": "rx channel not found"
+  },
+  {
+    "timestamp": 1785723199.4250839,
+    "kind": "/unsubscribe",
+    "detail": {
+      "rx_device": "DA11ADE-83b8e8",
+      "rx_channel": 2
+    },
+    "ok": true,
+    "error": null
+  }
+]
