@@ -423,6 +423,17 @@ function syncDialogTypeVisibility() {
 
 const ICON_PICKER_RENDER_CAP = 240;
 
+function populateIconStyleSelect() {
+  const available = new Set();
+  for (const icon of FA_ICONS) {
+    for (const s of icon.s) available.add(s);
+  }
+  const order = ["solid", "regular", "light", "duotone", "brands"];
+  const styles = order.filter((s) => available.has(s));
+  const select = document.getElementById("panel-icon-style");
+  select.innerHTML = styles.map((s) => `<option value="${s}">${FA_STYLE_LABELS[s]}</option>`).join("");
+}
+
 function renderIconPicker() {
   const picker = document.getElementById("panel-icon-picker");
   const count = document.getElementById("panel-icon-picker-count");
@@ -576,6 +587,7 @@ function toggleEditMode() {
 // --- init -----------------------------------------------------------------
 
 document.addEventListener("DOMContentLoaded", async () => {
+  populateIconStyleSelect();
   renderIconPicker();
 
   document.getElementById("panel-dialog-type").addEventListener("change", syncDialogTypeVisibility);

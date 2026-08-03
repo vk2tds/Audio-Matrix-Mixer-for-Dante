@@ -8,7 +8,7 @@
     document.documentElement.setAttribute("data-theme", localStorage.getItem("dante-web-theme") || "light");
   </script>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome/css/all.min.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename=fontawesome_css) }}">
 </head>
 <body>
   {% if not hide_chrome %}

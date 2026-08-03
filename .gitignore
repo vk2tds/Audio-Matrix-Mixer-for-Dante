@@ -4,7 +4,11 @@ __pycache__/
 .DS_Store
 logs/
 
-# Vendored Font Awesome Pro kit (licensed, not committed — see setup note in
-# README). Present locally after extracting the user's own FA Pro download;
-# the app serves it from disk regardless of git tracking.
-#static/vendor/
+# Font Awesome Pro is a paid, non-redistributable license — this repo bundles
+# Font Awesome Free instead (static/vendor/fontawesome-free/, freely
+# redistributable: CC BY 4.0 / SIL OFL 1.1 / MIT). Pro is an optional local
+# upgrade: drop your own licensed kit into static/vendor/fontawesome-pro/ and
+# the app uses it automatically. See README for setup. Neither the Pro kit
+# nor its generated icon metadata are committed.
+static/vendor/fontawesome-pro/
+static/js/panel-icons-data-pro.js

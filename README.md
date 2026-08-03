@@ -62,6 +62,46 @@ The app expects the daemon's relay at `http://127.0.0.1:9000` by default;
 override with the `NETAUDIO_RELAY_URL` environment variable if it's running
 elsewhere.
 
+## Icons (Font Awesome)
+
+The Panel page's icon picker is backed by [Font Awesome](https://fontawesome.com).
+This repo bundles **Font Awesome Free** (`static/vendor/fontawesome-free/`) as the
+default — it's freely redistributable (icons: CC BY 4.0, fonts: SIL OFL 1.1, code:
+MIT) and works out of the box, no setup needed.
+
+If you have a **Font Awesome Pro** license, you can use it locally for the full
+icon set (adds Light/Duotone styles and a much larger catalog) without it ever
+being committed — Pro licenses aren't redistributable, so it's gitignored and the
+app only uses it if it finds it on disk:
+
+```bash
+# Extract your own licensed Pro "web" package download so this exists:
+#   static/vendor/fontawesome-pro/css/all.min.css
+#   static/vendor/fontawesome-pro/webfonts/...
+unzip fontawesome-pro-X.Y.Z-web.zip \
+  "fontawesome-pro-*-web/css/all.min.css" \
+  "fontawesome-pro-*-web/webfonts/*" \
+  "fontawesome-pro-*-web/LICENSE.txt" \
+  "fontawesome-pro-*-web/metadata/icons.json" \
+  -d /tmp/fa-pro
+mv /tmp/fa-pro/fontawesome-pro-*-web static/vendor/fontawesome-pro
+
+# Regenerate the icon picker's search metadata from that kit's icons.json:
+python3 -c "
+import json
+d = json.load(open('static/vendor/fontawesome-pro/metadata/icons.json'))
+out = [{'n': n, 'l': i.get('label', n), 's': i.get('styles', []),
+        't': (i.get('search', {}) or {}).get('terms', [])[:6]}
+       for n, i in d.items() if i.get('styles')]
+out.sort(key=lambda x: x['n'])
+with open('static/js/panel-icons-data-pro.js', 'w') as f:
+    f.write('const FA_ICONS = ' + json.dumps(out, separators=(',', ':')) + ';\n')
+"
+```
+
+Restart the app afterward — the Pro/Free choice is made once at startup by
+checking whether `static/vendor/fontawesome-pro/css/all.min.css` exists.
+
 ## Architecture
 
 - `dante_web_app.py` — Flask app: serves the pages and proxies API calls (including

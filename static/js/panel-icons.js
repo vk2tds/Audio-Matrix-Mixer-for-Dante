@@ -1,5 +1,6 @@
-// Font Awesome Pro 5.x style-family prefixes. The icon list itself lives in
-// panel-icons-data.js (FA_ICONS), generated from the licensed kit's metadata.
+// Font Awesome 5.x style-family prefixes. The icon list itself lives in
+// panel-icons-data-free.js or panel-icons-data-pro.js (FA_ICONS) — whichever
+// tier is actually installed, picked by the backend (see dante_web_app.py).
 const FA_STYLE_PREFIX = {
   solid: "fas",
   regular: "far",

@@ -18,6 +18,29 @@ log = logging.getLogger("dante-web")
 
 DAEMON_PIDFILE = os.path.join(os.path.dirname(__file__), "logs", "daemon.pid")
 
+# Font Awesome Pro is a paid license and can't be redistributed, so this repo
+# only ships Free (static/vendor/fontawesome-free/). If a licensed Pro kit has
+# been dropped in locally (static/vendor/fontawesome-pro/ — gitignored, see
+# README), use that instead for the full icon set. Checked once at startup;
+# restart the app after adding/removing a Pro kit to pick up the change.
+_STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
+FONTAWESOME_PRO_AVAILABLE = os.path.exists(
+    os.path.join(_STATIC_DIR, "vendor", "fontawesome-pro", "css", "all.min.css")
+)
+
+
+@app.context_processor
+def inject_fontawesome():
+    if FONTAWESOME_PRO_AVAILABLE:
+        return {
+            "fontawesome_css": "vendor/fontawesome-pro/css/all.min.css",
+            "fontawesome_icons_js": "js/panel-icons-data-pro.js",
+        }
+    return {
+        "fontawesome_css": "vendor/fontawesome-free/css/all.min.css",
+        "fontawesome_icons_js": "js/panel-icons-data-free.js",
+    }
+
 HEALTH_CHECK_INTERVAL = 45  # seconds between passes
 HEALTH_CHECK_SETTLE = 3  # seconds to let a refresh land before re-checking
 AUTO_RESTART_COOLDOWN = 300  # don't auto-restart more than once per 5 minutes
