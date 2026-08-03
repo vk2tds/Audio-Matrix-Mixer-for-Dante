@@ -82,6 +82,13 @@ elsewhere.
   an in-progress edit or a slow CLI call isn't clobbered by an unrelated
   live update.
 
+## License
+
+MIT — see [LICENSE](LICENSE). Note for future reference: as sole copyright holder, the author
+retains the right to stop publishing source for future versions and relicense them under
+different terms at any time; this doesn't affect anyone's rights to code already released
+under this license.
+
 ## Trademark disclaimer
 
 This software is designed to work with Dante® enabled devices using the open source netaudio
