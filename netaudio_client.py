@@ -37,8 +37,8 @@ def _request(method, path, json_body=None, timeout=5):
     return data, resp.status_code
 
 
-def get_devices():
-    return _request("GET", "/devices")
+def get_devices(timeout=5):
+    return _request("GET", "/devices", timeout=timeout)
 
 
 def get_device(server_name):
@@ -49,9 +49,9 @@ def identify(device):
     return _request("POST", "/identify", {"device": device})
 
 
-def refresh(device=None):
+def refresh(device=None, timeout=5):
     body = {"device": device} if device else {}
-    return _request("POST", "/refresh", body)
+    return _request("POST", "/refresh", body, timeout=timeout)
 
 
 def subscribe(rx_device, rx_channel, tx_channel, tx_device):

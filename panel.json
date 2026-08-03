@@ -118,6 +118,34 @@
       "row": 2,
       "type": "device",
       "w": 1
+    },
+    {
+      "id": "25c10f2d-e4d7-44cf-b52a-11876b175954",
+      "type": "device",
+      "preset_id": null,
+      "device_name": "MINI",
+      "row": 3,
+      "col": 7,
+      "w": 1,
+      "h": 1,
+      "label": "Mini",
+      "icon": "fas fa-arrow-down",
+      "color": null,
+      "readonly": false
+    },
+    {
+      "id": "2d56b034-a63e-4629-a8a4-b09d4b45d714",
+      "type": "device",
+      "preset_id": null,
+      "device_name": "DA11ADE-83b8e8",
+      "row": 1,
+      "col": 6,
+      "w": 1,
+      "h": 1,
+      "label": null,
+      "icon": "fas fa-backpack",
+      "color": null,
+      "readonly": false
     }
   ]
 }

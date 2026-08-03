@@ -1,6 +1,8 @@
 import logging
 import os
 import signal
+import threading
+import time
 
 from flask import Flask, Response, jsonify, render_template, request
 
@@ -15,6 +17,41 @@ app = Flask(__name__)
 log = logging.getLogger("dante-web")
 
 DAEMON_PIDFILE = os.path.join(os.path.dirname(__file__), "logs", "daemon.pid")
+
+HEALTH_CHECK_INTERVAL = 45  # seconds between passes
+HEALTH_CHECK_SETTLE = 3  # seconds to let a refresh land before re-checking
+AUTO_RESTART_COOLDOWN = 300  # don't auto-restart more than once per 5 minutes
+_last_auto_restart = 0.0
+
+
+def _restart_daemon_process(kind, reason):
+    """Signal the daemon process run.sh is supervising; it notices the death
+    and restarts it, the same path already exercised by an actual crash.
+    Shared by the manual "Restart daemon" button and the auto-health-check.
+    """
+    try:
+        with open(DAEMON_PIDFILE) as f:
+            pid = int(f.read().strip())
+    except (FileNotFoundError, ValueError):
+        error = "No daemon pidfile found — this only works when running via run.sh."
+        activity_log.log_event(kind, {"reason": reason}, ok=False, error=error)
+        return False, error
+
+    try:
+        os.kill(pid, 0)
+    except OSError:
+        error = f"Daemon process {pid} isn't running (stale pidfile)."
+        activity_log.log_event(kind, {"pid": pid, "reason": reason}, ok=False, error=error)
+        return False, error
+
+    try:
+        os.kill(pid, signal.SIGTERM)
+    except OSError as exc:
+        activity_log.log_event(kind, {"pid": pid, "reason": reason}, ok=False, error=str(exc))
+        return False, str(exc)
+
+    activity_log.log_event(kind, {"pid": pid, "reason": reason}, ok=True, error=None)
+    return True, f"Signaled daemon (pid {pid}) to stop — run.sh will restart it within ~5s."
 
 
 def proxy(method, path, json_body=None):
@@ -130,29 +167,10 @@ def api_restart_daemon():
     # the exact process run.sh is tracking via its pidfile, and lets that
     # same loop notice the death and restart it, the same path already
     # exercised by an actual daemon crash.
-    try:
-        with open(DAEMON_PIDFILE) as f:
-            pid = int(f.read().strip())
-    except (FileNotFoundError, ValueError):
-        error = "No daemon pidfile found — this only works when running via run.sh."
-        activity_log.log_event("daemon:restart", None, ok=False, error=error)
-        return jsonify({"error": error}), 409
-
-    try:
-        os.kill(pid, 0)
-    except OSError:
-        error = f"Daemon process {pid} isn't running (stale pidfile)."
-        activity_log.log_event("daemon:restart", {"pid": pid}, ok=False, error=error)
-        return jsonify({"error": error}), 409
-
-    try:
-        os.kill(pid, signal.SIGTERM)
-    except OSError as exc:
-        activity_log.log_event("daemon:restart", {"pid": pid}, ok=False, error=str(exc))
-        return jsonify({"error": str(exc)}), 500
-
-    activity_log.log_event("daemon:restart", {"pid": pid}, ok=True)
-    return jsonify({"success": True, "message": f"Signaled daemon (pid {pid}) to stop — run.sh will restart it within ~5s."})
+    ok, message = _restart_daemon_process("daemon:restart", "manual")
+    if not ok:
+        return jsonify({"error": message}), 409
+    return jsonify({"success": True, "message": message})
 
 
 @app.route("/api/subscribe", methods=["POST"])
@@ -593,6 +611,74 @@ def api_events():
     )
 
 
+# --- Background health check ------------------------------------------
+#
+# Observed live: a device can sit "online" with an empty channels dict
+# (0 receivers, 0 transmitters) until someone happens to click Refresh —
+# the daemon has it, but hasn't backfilled its channel detail yet. Most of
+# the time nobody's watching this app, so nobody notices to click Refresh.
+# This loop watches for that shape, tries a plain refresh first, and only
+# escalates to a full daemon restart if the refresh alone didn't clear it
+# (mirrors the online-flag issue also seen after unplug/replug, where only
+# a restart's fresh mDNS discovery brought a device back).
+
+
+def _device_looks_incomplete(device):
+    if not isinstance(device, dict) or not device.get("online"):
+        return False
+    channels = device.get("channels") or {}
+    return not (channels.get("receivers") or {}) and not (channels.get("transmitters") or {})
+
+
+def _health_check_once():
+    global _last_auto_restart
+
+    devices, status = relay.get_devices(timeout=8)
+    if status >= 400 or not isinstance(devices, dict):
+        return
+    stale = [name for name, d in devices.items() if _device_looks_incomplete(d)]
+    if not stale:
+        return
+
+    log.warning("Health check: incomplete channel data for %s — refreshing", stale)
+    try:
+        relay.refresh(timeout=15)
+    except relay.RelayError as exc:
+        log.warning("Health check: refresh failed: %s", exc)
+        return
+
+    time.sleep(HEALTH_CHECK_SETTLE)
+    devices, status = relay.get_devices(timeout=8)
+    if status >= 400 or not isinstance(devices, dict):
+        return
+    still_stale = [name for name, d in devices.items() if _device_looks_incomplete(d)]
+    if not still_stale:
+        return
+
+    if time.time() - _last_auto_restart < AUTO_RESTART_COOLDOWN:
+        log.warning("Health check: still incomplete for %s, but a restart happened recently — waiting", still_stale)
+        return
+
+    log.warning("Health check: still incomplete for %s after refresh — restarting daemon", still_stale)
+    _last_auto_restart = time.time()
+    _restart_daemon_process("daemon:auto-restart", f"incomplete channel data: {', '.join(still_stale)}")
+
+
+def _health_monitor_loop():
+    while True:
+        time.sleep(HEALTH_CHECK_INTERVAL)
+        try:
+            _health_check_once()
+        except relay.RelayError as exc:
+            log.debug("Health check couldn't reach daemon: %s", exc)
+        except Exception:
+            log.exception("Device health monitor failed")
+
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5051))
+    # Guard against Werkzeug's debug-mode reloader spawning this twice —
+    # only the actual worker process (not its watcher parent) sets this.
+    if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
+        threading.Thread(target=_health_monitor_loop, daemon=True).start()
     app.run(host="0.0.0.0", port=port, debug=True, threaded=True)

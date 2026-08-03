@@ -31,10 +31,25 @@ const DanteStore = (() => {
       }
 
       switch (msg.event) {
-        case "snapshot":
-          devices = msg.devices || {};
+        case "snapshot": {
+          // A snapshot right after reconnect (e.g. the daemon just restarted)
+          // only reflects whatever it has re-discovered so far — a device
+          // still mid-rediscovery would be missing entirely. Keep anything
+          // we already knew about but mark it offline instead of dropping
+          // it, so devices don't flicker out of the UI during a restart.
+          // Only an explicit device_removed event actually deletes one.
+          const incoming = msg.devices || {};
+          const merged = { ...devices };
+          for (const key of Object.keys(merged)) {
+            if (!(key in incoming)) {
+              merged[key] = { ...merged[key], online: false };
+            }
+          }
+          Object.assign(merged, incoming);
+          devices = merged;
           notify();
           break;
+        }
         case "device_discovered":
         case "device_updated":
           if (msg.server_name && msg.device) {

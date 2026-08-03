@@ -1418,5 +1418,173 @@
     },
     "ok": false,
     "error": "2 action(s) failed"
+  },
+  {
+    "timestamp": 1785794228.0042508,
+    "kind": "panel:press",
+    "detail": {
+      "preset_id": "8eccf076-d1bb-4a01-ac43-dcf12a7722d2",
+      "preset_name": "Test",
+      "on": true,
+      "applied": 1,
+      "total": 3
+    },
+    "ok": false,
+    "error": "2 action(s) failed"
+  },
+  {
+    "timestamp": 1785794229.160179,
+    "kind": "panel:press",
+    "detail": {
+      "preset_id": "8eccf076-d1bb-4a01-ac43-dcf12a7722d2",
+      "preset_name": "Test",
+      "on": true,
+      "applied": 1,
+      "total": 3
+    },
+    "ok": false,
+    "error": "2 action(s) failed"
+  },
+  {
+    "timestamp": 1785794332.425161,
+    "kind": "/refresh",
+    "detail": {},
+    "ok": false,
+    "error": "could not reach netaudio daemon at http://127.0.0.1:9000 (HTTPConnectionPool(host='127.0.0.1', port=9000): Read timed out. (read timeout=5))"
+  },
+  {
+    "timestamp": 1785794369.399031,
+    "kind": "/refresh",
+    "detail": {},
+    "ok": false,
+    "error": "could not reach netaudio daemon at http://127.0.0.1:9000 (HTTPConnectionPool(host='127.0.0.1', port=9000): Read timed out. (read timeout=5))"
+  },
+  {
+    "timestamp": 1785794379.558316,
+    "kind": "/refresh",
+    "detail": {},
+    "ok": false,
+    "error": "could not reach netaudio daemon at http://127.0.0.1:9000 (HTTPConnectionPool(host='127.0.0.1', port=9000): Read timed out. (read timeout=5))"
+  },
+  {
+    "timestamp": 1785794397.721429,
+    "kind": "/refresh",
+    "detail": {},
+    "ok": false,
+    "error": "could not reach netaudio daemon at http://127.0.0.1:9000 (HTTPConnectionPool(host='127.0.0.1', port=9000): Read timed out. (read timeout=5))"
+  },
+  {
+    "timestamp": 1785794449.7038,
+    "kind": "/refresh",
+    "detail": {},
+    "ok": false,
+    "error": "could not reach netaudio daemon at http://127.0.0.1:9000 (HTTPConnectionPool(host='127.0.0.1', port=9000): Read timed out. (read timeout=5))"
+  },
+  {
+    "timestamp": 1785794536.031871,
+    "kind": "/refresh",
+    "detail": {},
+    "ok": false,
+    "error": "could not reach netaudio daemon at http://127.0.0.1:9000 (HTTPConnectionPool(host='127.0.0.1', port=9000): Read timed out. (read timeout=5))"
+  },
+  {
+    "timestamp": 1785794622.534666,
+    "kind": "/refresh",
+    "detail": {},
+    "ok": false,
+    "error": "could not reach netaudio daemon at http://127.0.0.1:9000 (HTTPConnectionPool(host='127.0.0.1', port=9000): Read timed out. (read timeout=5))"
+  },
+  {
+    "timestamp": 1785794747.853226,
+    "kind": "/refresh",
+    "detail": {},
+    "ok": false,
+    "error": "could not reach netaudio daemon at http://127.0.0.1:9000 (HTTPConnectionPool(host='127.0.0.1', port=9000): Read timed out. (read timeout=5))"
+  },
+  {
+    "timestamp": 1785794766.3972878,
+    "kind": "/subscribe",
+    "detail": {
+      "rx_device": "DA11ADE-83b8e8",
+      "rx_channel": 1,
+      "tx_channel": "CH2",
+      "tx_device": "DA11AEN-83b5a8"
+    },
+    "ok": true,
+    "error": null
+  },
+  {
+    "timestamp": 1785794772.33146,
+    "kind": "/subscribe",
+    "detail": {
+      "rx_device": "DA11ADE-83b8e8",
+      "rx_channel": 1,
+      "tx_channel": "CH1",
+      "tx_device": "DA11AEN-83b5a8"
+    },
+    "ok": true,
+    "error": null
+  },
+  {
+    "timestamp": 1785794773.506478,
+    "kind": "/subscribe",
+    "detail": {
+      "rx_device": "Mini-Garage",
+      "rx_channel": 2,
+      "tx_channel": "02",
+      "tx_device": "Mini-Garage"
+    },
+    "ok": true,
+    "error": null
+  },
+  {
+    "timestamp": 1785794774.6735868,
+    "kind": "/subscribe",
+    "detail": {
+      "rx_device": "Mini-Garage",
+      "rx_channel": 7,
+      "tx_channel": "11",
+      "tx_device": "Mini-Garage"
+    },
+    "ok": true,
+    "error": null
+  },
+  {
+    "timestamp": 1785794791.8169038,
+    "kind": "/subscribe",
+    "detail": {
+      "rx_device": "Mini-Garage",
+      "rx_channel": 2,
+      "tx_channel": "CH1",
+      "tx_device": "DA11AEN-83b5a8"
+    },
+    "ok": true,
+    "error": null
+  },
+  {
+    "timestamp": 1785794847.962166,
+    "kind": "daemon:restart",
+    "detail": {
+      "pid": 80471
+    },
+    "ok": true,
+    "error": null
+  },
+  {
+    "timestamp": 1785794917.511549,
+    "kind": "/refresh",
+    "detail": {},
+    "ok": false,
+    "error": "could not reach netaudio daemon at http://127.0.0.1:9000 (HTTPConnectionPool(host='127.0.0.1', port=9000): Read timed out. (read timeout=5))"
+  },
+  {
+    "timestamp": 1785795441.448291,
+    "kind": "daemon:restart",
+    "detail": {
+      "pid": 3113,
+      "reason": "manual"
+    },
+    "ok": true,
+    "error": null
   }
 ]
