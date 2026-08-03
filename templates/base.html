@@ -37,6 +37,11 @@
   <main>
     {% block content %}{% endblock %}
   </main>
+  <footer class="app-footer">
+    This software is designed to work with Dante&reg; enabled devices using the open source netaudio library.
+    The authors of this software are in no way associated with Audinate Pty Ltd. Audinate&reg;, the Audinate
+    logo, and Dante&reg; are registered trademarks of Audinate Pty Ltd.
+  </footer>
   <script src="{{ url_for('static', filename='js/common.js') }}"></script>
   {% block scripts %}{% endblock %}
 </body>

@@ -81,3 +81,9 @@ elsewhere.
   per device), and Flows/Config load once rather than live-subscribing, so
   an in-progress edit or a slow CLI call isn't clobbered by an unrelated
   live update.
+
+## Trademark disclaimer
+
+This software is designed to work with Dante® enabled devices using the open source netaudio
+library. The authors of this software are in no way associated with Audinate Pty Ltd. Audinate®,
+the Audinate logo, and Dante® are registered trademarks of Audinate Pty Ltd.
