@@ -149,10 +149,7 @@ checking whether `static/vendor/fontawesome-pro/css/all.min.css` exists.
 
 ## License
 
-MIT — see [LICENSE](LICENSE). Note for future reference: as sole copyright holder, the author
-retains the right to stop publishing source for future versions and relicense them under
-different terms at any time; this doesn't affect anyone's rights to code already released
-under this license.
+MIT — see [LICENSE](LICENSE). 
 
 ## Trademark disclaimer
 
