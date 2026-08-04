@@ -17,6 +17,11 @@ that daemon and gives you a browser UI for:
   channels a preset actually lists
 - **Config** — per-device rename (device/channel), latency, sample rate, encoding, AES67
 - **Flows** — TX multicast flow list/create/delete (see caveat below)
+- **Panel** — a customizable grid of buttons: apply/reverse a preset on press, show a
+  device's live online status, or just a toggleable heading. A button glows at half
+  intensity when its preset's rules already match live, even unpressed. Drag to
+  rearrange, and there's a display-only view with no editing UI for a kiosk or
+  second screen.
 
 Not every Dante device supports every feature (gain, metering, encoding, AES67 in
 particular vary by manufacturer/firmware) — the UI degrades gracefully when
@@ -27,6 +32,26 @@ out to the `netaudio` CLI directly instead of the daemon (see Architecture below
 It's slower (fresh mDNS discovery per call) and, in testing, less reliable —
 `create` can report success without the flow actually appearing afterward on some
 hardware. Treat results as unconfirmed until you double-check.
+
+## Screenshots
+
+**Devices**
+![Devices page listing discovered Dante devices with status, address, TX/RX channel counts, sample rate and latency](static/images/devices.png)
+
+**Routing**
+![Routing matrix for subscribing and unsubscribing audio channels between devices](static/images/routing.png)
+
+**Connections**
+![Flat live list of every active subscription across all devices](static/images/connections.png)
+
+**Presets**
+![Saved routing presets with their add/remove actions listed](static/images/presets.png)
+
+**Config**
+![Per-device configuration: name, latency, sample rate, encoding, AES67](static/images/config.png)
+
+**Panel**
+![Preset control panel: a grid of buttons for presets, device-presence indicators and headings, with the button-editing dialog open](static/images/buttons.png)
 
 ## Setup
 

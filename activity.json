@@ -1684,5 +1684,18 @@
     "detail": {},
     "ok": false,
     "error": "could not reach netaudio daemon at http://127.0.0.1:9000 (HTTPConnectionPool(host='127.0.0.1', port=9000): Read timed out. (read timeout=5))"
+  },
+  {
+    "timestamp": 1785799333.765383,
+    "kind": "panel:press",
+    "detail": {
+      "preset_id": "8eccf076-d1bb-4a01-ac43-dcf12a7722d2",
+      "preset_name": "Test",
+      "on": true,
+      "applied": 1,
+      "total": 3
+    },
+    "ok": false,
+    "error": "2 action(s) failed"
   }
 ]
