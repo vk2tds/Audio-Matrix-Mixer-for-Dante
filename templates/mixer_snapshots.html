@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Mixer Snapshots – Dante Web{% endblock %}
+{% block content %}
+<div class="panel">
+  <div class="hint">
+    Saved mixer states. Applying a snapshot only touches the bus outputs/inputs and parameters (level, mute) it
+    actually lists — everything else is left alone, same principle as routing presets. There's no live Mixer
+    Console yet to record from, so snapshots are built by hand below for now. Check two or more here to combine
+    them into a new snapshot — check them in the order you want conflicts resolved.
+  </div>
+  <div class="button-row" id="combine-toolbar" style="display: none;">
+    <button type="button" id="combine-btn" class="primary">Combine 0 selected into new snapshot…</button>
+    <button type="button" id="combine-clear-btn">Clear selection</button>
+  </div>
+  <div class="button-row">
+    <button type="button" id="new-snapshot-btn" class="primary">New snapshot…</button>
+  </div>
+  <table id="snapshots-table">
+    <thead>
+      <tr>
+        <th></th>
+        <th>Name</th>
+        <th>Actions</th>
+        <th>Updated</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody id="snapshots-rows">
+      <tr><td class="empty" colspan="5">Loading…</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="panel" id="snap-dialog" style="display: none;">
+  <div class="hint" id="snap-dialog-hint">New snapshot</div>
+  <div class="save-dialog-row">
+    <label for="snap-dialog-name">Name</label>
+    <input type="text" id="snap-dialog-name" placeholder="Snapshot name">
+  </div>
+  <div id="snap-dialog-actions"></div>
+  <div class="button-row">
+    <button type="button" id="snap-dialog-add-action-btn">+ Add action</button>
+  </div>
+  <div class="button-row">
+    <button type="button" id="snap-dialog-save-btn" class="primary">Save</button>
+    <button type="button" id="snap-dialog-cancel-btn">Cancel</button>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/mixer_snapshots.js') }}"></script>
+{% endblock %}

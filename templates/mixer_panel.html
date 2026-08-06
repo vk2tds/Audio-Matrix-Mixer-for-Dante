@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+{% block title %}Mixer Panel – Dante Web{% endblock %}
+{% block content %}
+<div class="panel">
+  <div class="hint">
+    A grid of buttons for your saved mixer snapshots, and live VU meter tiles. Press a snapshot button to apply it —
+    unlike the routing Panel, pressing again does not reverse it (v1). A VU tile shows one channel, or two side by
+    side as a stereo pair; it renders as a vertical meter when the button is square or taller than wide, and
+    horizontal when it's wider than tall. These buttons only ever touch mixer volumes/mutes — never Dante routing.
+    In edit mode, drag a button onto an empty cell to move it.
+  </div>
+  <div class="hint-row">
+    <div class="hint-row-buttons">
+      <label style="display:flex;align-items:center;gap:6px;">Columns <input type="number" id="mp-cols" min="1" max="24" style="width:60px;"></label>
+      <label style="display:flex;align-items:center;gap:6px;">Rows <input type="number" id="mp-rows" min="1" max="24" style="width:60px;"></label>
+      <button type="button" id="mp-resize-btn">Resize</button>
+    </div>
+    <div class="hint-row-buttons">
+      <a href="/mixer-snapshots" class="btn">Manage snapshots</a>
+      <button type="button" id="mp-edit-toggle-btn">Edit layout</button>
+    </div>
+  </div>
+</div>
+
+<div class="panel">
+  <div id="mp-grid" class="panel-grid"></div>
+  <div class="hint" id="mp-empty-hint" style="display: none; text-align: center; padding: 24px 0;">
+    No buttons yet. Click "Edit layout" above, then click an empty cell to add one.
+  </div>
+</div>
+
+<div class="panel" id="mp-dialog" style="display: none;">
+  <div class="hint" id="mp-dialog-hint">Add button</div>
+
+  <div class="save-dialog-row">
+    <label for="mp-dialog-type">Type</label>
+    <select id="mp-dialog-type">
+      <option value="snapshot">Snapshot button</option>
+      <option value="vu">VU meter</option>
+    </select>
+  </div>
+  <div class="save-dialog-row" id="mp-dialog-snapshot-row">
+    <label for="mp-dialog-snapshot">Snapshot</label>
+    <select id="mp-dialog-snapshot"></select>
+  </div>
+
+  <div id="mp-dialog-vu-rows">
+    <div class="save-dialog-row">
+      <label for="mp-dialog-vu-count">Channels</label>
+      <select id="mp-dialog-vu-count">
+        <option value="1">Single (1 channel)</option>
+        <option value="2">Stereo pair (2 channels)</option>
+      </select>
+    </div>
+    <div class="save-dialog-row">
+      <label for="mp-dialog-vu-bus1">Bus / channel 1</label>
+      <div style="flex:1;display:flex;gap:8px;">
+        <input type="text" id="mp-dialog-vu-bus1" placeholder="Bus id" style="flex:1;">
+        <select id="mp-dialog-vu-slot1" style="width:120px;">
+          <option value="">Output</option>
+          <option value="0">Input 1</option>
+          <option value="1">Input 2</option>
+          <option value="2">Input 3</option>
+          <option value="3">Input 4</option>
+          <option value="4">Input 5</option>
+          <option value="5">Input 6</option>
+          <option value="6">Input 7</option>
+          <option value="7">Input 8</option>
+        </select>
+      </div>
+    </div>
+    <div class="save-dialog-row" id="mp-dialog-vu-row2">
+      <label for="mp-dialog-vu-bus2">Bus / channel 2</label>
+      <div style="flex:1;display:flex;gap:8px;">
+        <input type="text" id="mp-dialog-vu-bus2" placeholder="Bus id" style="flex:1;">
+        <select id="mp-dialog-vu-slot2" style="width:120px;">
+          <option value="">Output</option>
+          <option value="0">Input 1</option>
+          <option value="1">Input 2</option>
+          <option value="2">Input 3</option>
+          <option value="3">Input 4</option>
+          <option value="4">Input 5</option>
+          <option value="5">Input 6</option>
+          <option value="6">Input 7</option>
+          <option value="7">Input 8</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="save-dialog-row">
+    <label for="mp-dialog-text">Text</label>
+    <input type="text" id="mp-dialog-text" placeholder="Defaults to snapshot name">
+  </div>
+  <div class="save-dialog-row" id="mp-dialog-icon-row">
+    <label>Icon</label>
+    <div style="flex:1;display:flex;align-items:center;gap:10px;">
+      <span id="mp-dialog-icon-preview" style="width:30px;height:30px;display:flex;align-items:center;justify-content:center;background:var(--panel-alt);border:1px solid var(--border);border-radius:var(--radius);"></span>
+      <button type="button" id="mp-dialog-icon-pick-btn">Choose icon…</button>
+      <button type="button" id="mp-dialog-icon-clear-btn">None</button>
+    </div>
+  </div>
+  <div class="save-dialog-row">
+    <label for="mp-dialog-color">Colour</label>
+    <div style="flex:1;display:flex;align-items:center;gap:10px;">
+      <input type="color" id="mp-dialog-color" value="#2563eb">
+      <label style="display:flex;align-items:center;gap:6px;width:auto;color:var(--text-dim);font-size:13px;">
+        <input type="checkbox" id="mp-dialog-color-enabled" style="width:16px;height:16px;"> custom colour
+      </label>
+    </div>
+  </div>
+  <div class="save-dialog-row">
+    <label for="mp-dialog-w">Width</label>
+    <select id="mp-dialog-w">
+      <option value="1">1</option>
+      <option value="2">2</option>
+      <option value="3">3</option>
+    </select>
+  </div>
+  <div class="save-dialog-row">
+    <label for="mp-dialog-h">Height</label>
+    <select id="mp-dialog-h">
+      <option value="1">1</option>
+      <option value="2">2</option>
+      <option value="3">3</option>
+    </select>
+  </div>
+
+  <div id="mp-icon-picker-wrap" style="display: none;">
+    <div class="panel-icon-picker-controls">
+      <input type="text" id="mp-icon-search" placeholder="Search icons…">
+      <select id="mp-icon-style"></select>
+    </div>
+    <div id="mp-icon-picker" class="panel-icon-picker"></div>
+    <div class="hint" id="mp-icon-picker-count"></div>
+  </div>
+
+  <div class="button-row">
+    <button type="button" id="mp-dialog-save-btn" class="primary">Save</button>
+    <button type="button" id="mp-dialog-delete-btn" style="display:none;">Delete</button>
+    <button type="button" id="mp-dialog-cancel-btn">Cancel</button>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename=fontawesome_icons_js) }}"></script>
+<script src="{{ url_for('static', filename='js/panel-icons.js') }}"></script>
+<script src="{{ url_for('static', filename='js/mixer_panel.js') }}"></script>
+{% endblock %}

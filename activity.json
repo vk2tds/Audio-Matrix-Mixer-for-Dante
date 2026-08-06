@@ -1697,5 +1697,41 @@
     },
     "ok": false,
     "error": "2 action(s) failed"
+  },
+  {
+    "timestamp": 1786044758.8943958,
+    "kind": "mixer_snapshot:apply",
+    "detail": {
+      "snapshot_id": "92090737-fec6-4df6-8820-779aff299d18",
+      "snapshot_name": "TEMP-test-snapshot",
+      "applied": 0,
+      "total": 3
+    },
+    "ok": false,
+    "error": "3 operation(s) failed"
+  },
+  {
+    "timestamp": 1786045249.608268,
+    "kind": "mixer_snapshot:apply",
+    "detail": {
+      "snapshot_id": "9e4ed199-40dd-4398-bd88-0448ea405291",
+      "snapshot_name": "TEMP-mixer-test",
+      "applied": 0,
+      "total": 1
+    },
+    "ok": false,
+    "error": "1 operation(s) failed"
+  },
+  {
+    "timestamp": 1786045525.280564,
+    "kind": "mixer_panel:press",
+    "detail": {
+      "snapshot_id": "9e4ed199-40dd-4398-bd88-0448ea405291",
+      "snapshot_name": "TEMP-mixer-test",
+      "applied": 0,
+      "total": 1
+    },
+    "ok": false,
+    "error": "1 operation(s) failed"
   }
 ]

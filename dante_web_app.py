@@ -8,6 +8,9 @@ from flask import Flask, Response, jsonify, render_template, request
 
 import activity_log
 import designs_store
+import mixer_client
+import mixer_panel_store
+import mixer_snapshots_store
 import netaudio_cli
 import netaudio_client as relay
 import panel_store
@@ -156,6 +159,16 @@ def panel_page():
 @app.route("/panel/display")
 def panel_display_page():
     return render_template("panel.html", hide_chrome=True, display_only=True)
+
+
+@app.route("/mixer-snapshots")
+def mixer_snapshots_page():
+    return render_template("mixer_snapshots.html")
+
+
+@app.route("/mixer-panel")
+def mixer_panel_page():
+    return render_template("mixer_panel.html")
 
 
 # --- API proxy ---------------------------------------------------------
@@ -392,6 +405,178 @@ def api_panel_press(pid):
         error=None if applied == len(results) else f"{len(results) - applied} action(s) failed",
     )
     return jsonify({"success": True, "applied": applied, "total": len(results), "results": results})
+
+
+# --- Mixer (DanteMixer relay) -------------------------------------------------
+# Proxies to a separate DanteMixer daemon the same way the routes above proxy
+# to netaudio — see mixer_client.py. DanteMixer may not have a running Web
+# API yet; calls below surface that as a normal 502 "could not reach mixer
+# daemon" error, the same graceful-unreachable pattern used everywhere else.
+#
+# A snapshot's actions are {bus_id, slot, level_db, muted} — slot is null for
+# a bus's own output, 0-7 for a specific input. level_db/muted are each
+# independently nullable: applying only touches parameters actually listed,
+# same principle as routing presets. Unlike routing preset buttons, mixer
+# snapshot buttons do not reverse on a second press (v1 — see
+# MIXER_PANEL_SPEC.md §4).
+
+
+def _mixer_snapshot_operations(actions):
+    """Flatten a snapshot's actions (each may set level and/or mute) into
+    individual relay operations, one per actual relay call — mirrors how
+    routing preset actions map 1:1 to subscribe/unsubscribe calls."""
+    ops = []
+    for action in actions:
+        bus_id = action["bus_id"]
+        slot = action.get("slot")
+        if action.get("level_db") is not None:
+            ops.append({"bus_id": bus_id, "slot": slot, "kind": "level", "value": action["level_db"]})
+        if action.get("muted") is not None:
+            ops.append({"bus_id": bus_id, "slot": slot, "kind": "mute", "value": action["muted"]})
+    return ops
+
+
+def _apply_mixer_operation(op):
+    if op["kind"] == "level":
+        if op["slot"] is None:
+            return mixer_client.set_output_level(op["bus_id"], op["value"])
+        return mixer_client.set_input_level(op["bus_id"], op["slot"], op["value"])
+    if op["slot"] is None:
+        return mixer_client.set_output_mute(op["bus_id"], op["value"])
+    return mixer_client.set_input_mute(op["bus_id"], op["slot"], op["value"])
+
+
+def _apply_mixer_snapshot(snapshot, activity_kind):
+    ops = _mixer_snapshot_operations(snapshot["actions"])
+    results = []
+    for op in ops:
+        try:
+            data, status = _apply_mixer_operation(op)
+            results.append({**op, "ok": status < 400, "response": data})
+        except mixer_client.RelayError as exc:
+            results.append({**op, "ok": False, "response": {"error": str(exc)}})
+
+    applied = sum(1 for r in results if r["ok"])
+    activity_log.log_event(
+        activity_kind,
+        {
+            "snapshot_id": snapshot["id"],
+            "snapshot_name": snapshot["name"],
+            "applied": applied,
+            "total": len(results),
+        },
+        ok=applied == len(results),
+        error=None if applied == len(results) else f"{len(results) - applied} operation(s) failed",
+    )
+    return jsonify({"success": True, "applied": applied, "total": len(results), "results": results})
+
+
+@app.route("/api/mixer/devices")
+def api_mixer_devices():
+    try:
+        data, status = mixer_client.get_devices()
+    except mixer_client.RelayError as exc:
+        return jsonify({"error": str(exc)}), 502
+    return jsonify(data), status
+
+
+@app.route("/api/mixer/mixers")
+def api_mixer_mixers():
+    try:
+        data, status = mixer_client.get_mixers()
+    except mixer_client.RelayError as exc:
+        return jsonify({"error": str(exc)}), 502
+    return jsonify(data), status
+
+
+@app.route("/api/mixer/snapshots")
+def api_list_mixer_snapshots():
+    return jsonify(mixer_snapshots_store.list_snapshots())
+
+
+@app.route("/api/mixer/snapshots/<sid>")
+def api_get_mixer_snapshot(sid):
+    snapshot = mixer_snapshots_store.get_snapshot(sid)
+    if snapshot is None:
+        return jsonify({"error": "snapshot not found"}), 404
+    return jsonify(snapshot)
+
+
+@app.route("/api/mixer/snapshots", methods=["POST"])
+def api_save_mixer_snapshot():
+    body = request.get_json(force=True, silent=True) or {}
+    name = (body.get("name") or "").strip()
+    if not name:
+        return jsonify({"error": "name is required"}), 400
+    actions = body.get("actions")
+    if not isinstance(actions, list) or not actions:
+        return jsonify({"error": "actions must be a non-empty list"}), 400
+    sid = body.get("id")
+    sid = mixer_snapshots_store.save_snapshot(sid, name, actions)
+    return jsonify({"success": True, "id": sid})
+
+
+@app.route("/api/mixer/snapshots/<sid>", methods=["DELETE"])
+def api_delete_mixer_snapshot(sid):
+    mixer_snapshots_store.delete_snapshot(sid)
+    return jsonify({"success": True})
+
+
+@app.route("/api/mixer/snapshots/<sid>/apply", methods=["POST"])
+def api_apply_mixer_snapshot(sid):
+    snapshot = mixer_snapshots_store.get_snapshot(sid)
+    if snapshot is None:
+        return jsonify({"error": "snapshot not found"}), 404
+    return _apply_mixer_snapshot(snapshot, "mixer_snapshot:apply")
+
+
+@app.route("/api/mixer-panel")
+def api_get_mixer_panel():
+    return jsonify(mixer_panel_store.get_panel())
+
+
+@app.route("/api/mixer-panel", methods=["POST"])
+def api_save_mixer_panel():
+    body = request.get_json(force=True, silent=True) or {}
+    try:
+        cols = int(body.get("cols") or 8)
+        rows = int(body.get("rows") or 4)
+    except (TypeError, ValueError):
+        return jsonify({"error": "cols and rows must be integers"}), 400
+    buttons = body.get("buttons")
+    if not isinstance(buttons, list):
+        return jsonify({"error": "buttons must be a list"}), 400
+    data = mixer_panel_store.save_panel(cols, rows, buttons)
+    return jsonify({"success": True, **data})
+
+
+@app.route("/api/mixer-panel/press/<sid>", methods=["POST"])
+def api_mixer_panel_press(sid):
+    snapshot = mixer_snapshots_store.get_snapshot(sid)
+    if snapshot is None:
+        return jsonify({"error": "snapshot not found"}), 404
+    return _apply_mixer_snapshot(snapshot, "mixer_panel:press")
+
+
+@app.route("/api/mixer/meters")
+def api_mixer_meters():
+    def generate():
+        try:
+            for chunk in mixer_client.meters_stream():
+                yield chunk
+        except mixer_client.RelayError as exc:
+            payload = f'data: {{"event": "relay_unavailable", "error": {str(exc)!r}}}\n\n'
+            yield payload.encode()
+        except GeneratorExit:
+            raise
+        except Exception as exc:
+            log.debug("mixer meters stream ended: %s", exc)
+
+    return Response(
+        generate(),
+        mimetype="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 
 
 # --- Design mode ------------------------------------------------------------
