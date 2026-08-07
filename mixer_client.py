@@ -56,11 +56,11 @@ def set_bus_name(mixer_id, name):
     return _request("PUT", f"/mixers/{quote(mixer_id, safe='')}/name", {"name": name})
 
 
-def set_input(mixer_id, slot, device_id, channel):
+def set_input(mixer_id, slot, device_uid, channel):
     return _request(
         "PUT",
         f"/mixers/{quote(mixer_id, safe='')}/inputs/{slot}",
-        {"deviceId": device_id, "channel": channel},
+        {"deviceUID": device_uid, "channel": channel},
     )
 
 
@@ -88,11 +88,11 @@ def set_output_mute(mixer_id, muted):
     return _request("PUT", f"/mixers/{quote(mixer_id, safe='')}/output/mute", {"muted": muted})
 
 
-def set_output_route(mixer_id, device_id, channels):
+def set_output_route(mixer_id, device_name):
     return _request(
         "PUT",
         f"/mixers/{quote(mixer_id, safe='')}/output/route",
-        {"deviceId": device_id, "channels": channels},
+        {"device": device_name},
     )
 
 

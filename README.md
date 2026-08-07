@@ -22,10 +22,19 @@ that daemon and gives you a browser UI for:
   intensity when its preset's rules already match live, even unpressed. Drag to
   rearrange, and there's a display-only view with no editing UI for a kiosk or
   second screen.
+- **Mixer Snapshots / Mixer Panel** — save/apply named mixer configurations and
+  build a grid of mixer buttons and VU meters, mirroring Presets/Panel above but
+  for mixing rather than routing. See the mixer engine caveat below.
 
 Not every Dante device supports every feature (gain, metering, encoding, AES67 in
 particular vary by manufacturer/firmware) — the UI degrades gracefully when
 a device doesn't report or accept a given control.
+
+**Mixer caveat:** the Mixer pages are a client for
+[RealTime-MacOS-Audio-Mixer](https://github.com/vk2tds/RealTime-MacOS-Audio-Mixer),
+a separate macOS mixing engine that's still under active development and not yet
+released. The pages degrade gracefully (a "daemon unreachable"-style state) if
+that engine isn't running.
 
 **Flows caveat:** the daemon's relay has no `/flow` endpoint, so that page shells
 out to the `netaudio` CLI directly instead of the daemon (see Architecture below).
