@@ -4,9 +4,11 @@
 <div class="panel">
   <div class="hint">
     Saved mixer states. Applying a snapshot only touches the bus outputs/inputs and parameters (level, mute) it
-    actually lists — everything else is left alone, same principle as routing presets. There's no live Mixer
-    Console yet to record from, so snapshots are built by hand below for now. Check two or more here to combine
-    them into a new snapshot — check them in the order you want conflicts resolved.
+    actually lists — everything else is left alone, same principle as routing presets. Snapshots only cover
+    level/mute, not input device assignment or output routing — use the <a href="/mixer-console">Mixer</a> page
+    for live, hands-on setup (e.g. routing the MacBook microphone to the MacBook speakers), then save the
+    level/mute state you land on here as a snapshot. Check two or more here to combine them into a new snapshot —
+    check them in the order you want conflicts resolved.
   </div>
   <div class="button-row" id="combine-toolbar" style="display: none;">
     <button type="button" id="combine-btn" class="primary">Combine 0 selected into new snapshot…</button>

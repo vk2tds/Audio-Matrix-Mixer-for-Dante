@@ -103,13 +103,27 @@ existing routing-focused nav items.
 
 1. Data stores + backend routes (`mixer_snapshots_store.py`,
    `mixer_panel_store.py`, routes) — testable via `curl` before any UI,
-   same as every other feature in this app so far.
+   same as every other feature in this app so far. **Done.**
 2. Mixer Panel grid + snapshot-type buttons (biggest visible chunk, reuses
-   the most existing code).
-3. Mixer Snapshots page (save/rename/delete/combine).
-4. Mixer Console (live adjustment) — needs DanteMixer's real control API to
-   be genuinely useful, so this is the piece most worth deferring until
-   DanteMixer Milestone 1+ lands.
-5. VU button type + SSE meter wiring — also needs DanteMixer's real
-   `/meters/stream` to show real data, but the button/orientation UI can be
-   built and tested with fake/static levels first.
+   the most existing code). **Done.**
+3. Mixer Snapshots page (save/rename/delete/combine). **Done** — plus
+   editing an existing snapshot in place (not in the original spec, added
+   2026-08-07 once real usage surfaced the need), and a bus-id dropdown
+   (bus1-bus8) instead of free text, after a real user snapshot targeted a
+   typo'd bus id ("ABC") that could never have applied.
+4. Mixer Console (live adjustment) — **done, 2026-08-07**, once DanteMixer's
+   real control API existed (SPEC.md §6 fully implemented — see the sibling
+   repo's STATUS.md milestones 3/5). New page `/mixer-console`: per-bus tabs,
+   assign a real input device+channel to a slot, route the bus's output to
+   a device, adjust every level/mute — all direct pass-through to the
+   engine via new `/api/mixer/mixers/...` routes in `dante_web_app.py`
+   (`_mixer_console_call` mirrors the existing generic `proxy()` helper's
+   activity-logging pattern, just against `mixer_client` instead of the
+   netaudio relay).
+5. VU button type + SSE meter wiring — **done, 2026-08-07**, once
+   DanteMixer's real `/meters/stream` existed (see its STATUS.md milestone
+   4). Both the Mixer Console's inline VU bars and the Mixer Panel's VU
+   tiles (`buildVuMeter`) now read real `peakDb` from the SSE stream instead
+   of the placeholder fake random-walk animation (`wireVuPlaceholder`,
+   removed). `/api/mixer/meters/start` and `/stop` proxy routes added
+   alongside the SSE stream proxy that already existed.

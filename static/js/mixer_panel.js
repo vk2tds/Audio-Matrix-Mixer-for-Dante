@@ -4,10 +4,8 @@
 // from the routing Panel's grid entirely — these buttons never touch Dante
 // routing, and vice versa.
 //
-// VU meter data is currently a client-side placeholder (a fake random-walk
-// level per channel) since DanteMixer doesn't have a running meters stream
-// yet — see wireVuPlaceholder() below, clearly marked as the thing to swap
-// for the real /api/mixer/meters SSE feed once DanteMixer exists.
+// VU meter data comes from the mixer engine's real /meters SSE stream —
+// see wireVuMeters() below.
 
 let panelData = { cols: 8, rows: 4, buttons: [] };
 let allSnapshots = [];
@@ -118,7 +116,7 @@ function buildPanelButton(btn) {
       el.appendChild(labelEl);
     }
     if (btn.color) el.style.borderColor = btn.color;
-    vuElements.set(btn.id, { fills });
+    vuElements.set(btn.id, { fills, channels: btn.channels || [] });
   } else {
     const snapshot = allSnapshots.find((s) => s.id === btn.snapshot_id);
     const missing = !snapshot;
@@ -236,28 +234,72 @@ async function pressSnapshotButton(btn, el) {
   }
 }
 
-// --- VU placeholder (swap for real SSE data once DanteMixer exists) -------
+// --- VU meters: live SSE data from the mixer engine ------------------------
 
-function wireVuPlaceholder() {
-  const phase = new Map(); // button id -> per-channel phase, for a smooth fake wander
-  setInterval(() => {
-    for (const [id, { fills }] of vuElements) {
-      if (!phase.has(id)) phase.set(id, fills.map(() => Math.random() * Math.PI * 2));
-      const phases = phase.get(id);
-      fills.forEach((fill, i) => {
-        phases[i] += 0.15 + Math.random() * 0.1;
-        const level = Math.max(0, Math.min(100, 40 + Math.sin(phases[i]) * 35 + Math.random() * 10));
-        const vertical = fill.parentElement.parentElement.classList.contains("vertical");
-        if (vertical) {
-          fill.style.height = `${level}%`;
-          fill.style.width = "100%";
-        } else {
-          fill.style.width = `${level}%`;
-          fill.style.height = "100%";
-        }
-      });
+let mixerStates = [];
+let latestMeters = { inputs: [], buses: [] };
+
+// Matches metering.js's -60..0dB -> 0..100% convention.
+function dbToPercent(db) {
+  if (typeof db !== "number" || Number.isNaN(db)) return 0;
+  const clamped = Math.max(-60, Math.min(0, db));
+  return ((clamped + 60) / 60) * 100;
+}
+
+function levelForChannel(channel) {
+  if (channel.slot == null) {
+    const bus = latestMeters.buses.find((b) => b.busId === channel.bus_id);
+    return bus ? bus.peakDb : -96;
+  }
+  const bus = mixerStates.find((b) => b.id === channel.bus_id);
+  const input = bus && bus.inputs.find((i) => i.slot === channel.slot);
+  if (!input || !input.inputChannel) return -96;
+  const meter = latestMeters.inputs.find(
+    (m) => m.deviceUID === input.inputChannel.deviceUID && m.channel === input.inputChannel.channel
+  );
+  return meter ? meter.peakDb : -96;
+}
+
+function updateVuTiles() {
+  for (const { fills, channels } of vuElements.values()) {
+    fills.forEach((fill, i) => {
+      const channel = channels[i];
+      if (!channel) return;
+      const level = dbToPercent(levelForChannel(channel));
+      const vertical = fill.parentElement.parentElement.classList.contains("vertical");
+      if (vertical) {
+        fill.style.height = `${level}%`;
+        fill.style.width = "100%";
+      } else {
+        fill.style.width = `${level}%`;
+        fill.style.height = "100%";
+      }
+    });
+  }
+}
+
+// Doesn't call /meters/stop on unload — see mixer_console.js's
+// connectMeterStream for why (global enabled flag, other pages may still
+// want it).
+async function wireVuMeters() {
+  try {
+    mixerStates = await api("GET", "/api/mixer/mixers");
+  } catch {
+    mixerStates = [];
+  }
+  api("POST", "/api/mixer/meters/start").catch(() => {});
+  const source = new EventSource("/api/mixer/meters");
+  source.addEventListener("message", (e) => {
+    let data;
+    try {
+      data = JSON.parse(e.data);
+    } catch {
+      return;
     }
-  }, 120);
+    if (data.event !== "meter_levels") return;
+    latestMeters = data;
+    updateVuTiles();
+  });
 }
 
 // --- edit dialog --------------------------------------------------------
@@ -300,9 +342,9 @@ function openAddDialog(row, col) {
   document.getElementById("mp-dialog-color-enabled").checked = false;
   document.getElementById("mp-dialog-color").value = "#2563eb";
   document.getElementById("mp-dialog-vu-count").value = "1";
-  document.getElementById("mp-dialog-vu-bus1").value = "";
+  document.getElementById("mp-dialog-vu-bus1").value = "bus1";
   document.getElementById("mp-dialog-vu-slot1").value = "";
-  document.getElementById("mp-dialog-vu-bus2").value = "";
+  document.getElementById("mp-dialog-vu-bus2").value = "bus1";
   document.getElementById("mp-dialog-vu-slot2").value = "";
   setDialogIcon(null);
   populateSnapshotSelect();
@@ -539,5 +581,5 @@ document.addEventListener("DOMContentLoaded", async () => {
     showToast(err.message, true);
   }
 
-  wireVuPlaceholder();
+  wireVuMeters();
 });

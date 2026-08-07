@@ -924,6 +924,23 @@ table.matrix th.group-col-span {
   background: repeating-linear-gradient(45deg, var(--border), var(--border) 4px, var(--panel) 4px, var(--panel) 8px);
 }
 
+/* Mixer Console inline VU bars (one per input slot + bus output) */
+.vu-bar {
+  width: 90px;
+  height: 8px;
+  background: var(--panel);
+  border-radius: 4px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.vu-bar .bar-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--good), var(--warn) 80%, var(--bad));
+  transition: width 80ms linear;
+}
+
 /* Mixer panel VU meter tiles */
 .panel-button-vu {
   cursor: default;

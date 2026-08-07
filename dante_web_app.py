@@ -161,6 +161,11 @@ def panel_display_page():
     return render_template("panel.html", hide_chrome=True, display_only=True)
 
 
+@app.route("/mixer-console")
+def mixer_console_page():
+    return render_template("mixer_console.html")
+
+
 @app.route("/mixer-snapshots")
 def mixer_snapshots_page():
     return render_template("mixer_snapshots.html")
@@ -489,6 +494,123 @@ def api_mixer_mixers():
     return jsonify(data), status
 
 
+def _mixer_console_call(kind, detail, fn, *args):
+    """Live Mixer Console mutations — direct pass-through to the mixer
+    engine (assign/clear an input slot, set a level/mute, route a bus's
+    output), logged the same way the generic netaudio `proxy()` helper logs
+    routing mutations, just against mixer_client instead of the relay."""
+    try:
+        data, status = fn(*args)
+    except mixer_client.RelayError as exc:
+        activity_log.log_event(kind, detail, ok=False, error=str(exc))
+        return jsonify({"error": str(exc)}), 502
+    ok = status < 400
+    error = None if ok else (data.get("error") if isinstance(data, dict) else str(data))
+    activity_log.log_event(kind, detail, ok=ok, error=error)
+    return jsonify(data), status
+
+
+@app.route("/api/mixer/mixers/<mixer_id>/name", methods=["PUT"])
+def api_mixer_set_name(mixer_id):
+    body = request.get_json(force=True, silent=True) or {}
+    name = (body.get("name") or "").strip()
+    if not name:
+        return jsonify({"error": "name is required"}), 400
+    return _mixer_console_call(
+        "mixer:name", {"bus_id": mixer_id, "name": name}, mixer_client.set_bus_name, mixer_id, name
+    )
+
+
+@app.route("/api/mixer/mixers/<mixer_id>/inputs/<int:slot>", methods=["PUT"])
+def api_mixer_assign_input(mixer_id, slot):
+    body = request.get_json(force=True, silent=True) or {}
+    device_uid = body.get("deviceUID")
+    channel = body.get("channel")
+    if not device_uid or channel is None:
+        return jsonify({"error": "deviceUID and channel are required"}), 400
+    return _mixer_console_call(
+        "mixer:input_assign",
+        {"bus_id": mixer_id, "slot": slot, "deviceUID": device_uid, "channel": channel},
+        mixer_client.set_input,
+        mixer_id,
+        slot,
+        device_uid,
+        channel,
+    )
+
+
+@app.route("/api/mixer/mixers/<mixer_id>/inputs/<int:slot>", methods=["DELETE"])
+def api_mixer_clear_input(mixer_id, slot):
+    return _mixer_console_call(
+        "mixer:input_clear", {"bus_id": mixer_id, "slot": slot}, mixer_client.clear_input, mixer_id, slot
+    )
+
+
+@app.route("/api/mixer/mixers/<mixer_id>/inputs/<int:slot>/level", methods=["PUT"])
+def api_mixer_set_input_level(mixer_id, slot):
+    body = request.get_json(force=True, silent=True) or {}
+    level_db = body.get("levelDb")
+    if level_db is None:
+        return jsonify({"error": "levelDb is required"}), 400
+    return _mixer_console_call(
+        "mixer:input_level",
+        {"bus_id": mixer_id, "slot": slot, "levelDb": level_db},
+        mixer_client.set_input_level,
+        mixer_id,
+        slot,
+        level_db,
+    )
+
+
+@app.route("/api/mixer/mixers/<mixer_id>/inputs/<int:slot>/mute", methods=["PUT"])
+def api_mixer_set_input_mute(mixer_id, slot):
+    body = request.get_json(force=True, silent=True) or {}
+    muted = body.get("muted")
+    if muted is None:
+        return jsonify({"error": "muted is required"}), 400
+    return _mixer_console_call(
+        "mixer:input_mute",
+        {"bus_id": mixer_id, "slot": slot, "muted": muted},
+        mixer_client.set_input_mute,
+        mixer_id,
+        slot,
+        muted,
+    )
+
+
+@app.route("/api/mixer/mixers/<mixer_id>/output/level", methods=["PUT"])
+def api_mixer_set_output_level(mixer_id):
+    body = request.get_json(force=True, silent=True) or {}
+    level_db = body.get("levelDb")
+    if level_db is None:
+        return jsonify({"error": "levelDb is required"}), 400
+    return _mixer_console_call(
+        "mixer:output_level", {"bus_id": mixer_id, "levelDb": level_db}, mixer_client.set_output_level, mixer_id, level_db
+    )
+
+
+@app.route("/api/mixer/mixers/<mixer_id>/output/mute", methods=["PUT"])
+def api_mixer_set_output_mute(mixer_id):
+    body = request.get_json(force=True, silent=True) or {}
+    muted = body.get("muted")
+    if muted is None:
+        return jsonify({"error": "muted is required"}), 400
+    return _mixer_console_call(
+        "mixer:output_mute", {"bus_id": mixer_id, "muted": muted}, mixer_client.set_output_mute, mixer_id, muted
+    )
+
+
+@app.route("/api/mixer/mixers/<mixer_id>/output/route", methods=["PUT"])
+def api_mixer_set_output_route(mixer_id):
+    body = request.get_json(force=True, silent=True) or {}
+    device_name = (body.get("device") or "").strip()
+    if not device_name:
+        return jsonify({"error": "device is required"}), 400
+    return _mixer_console_call(
+        "mixer:output_route", {"bus_id": mixer_id, "device": device_name}, mixer_client.set_output_route, mixer_id, device_name
+    )
+
+
 @app.route("/api/mixer/snapshots")
 def api_list_mixer_snapshots():
     return jsonify(mixer_snapshots_store.list_snapshots())
@@ -556,6 +678,24 @@ def api_mixer_panel_press(sid):
     if snapshot is None:
         return jsonify({"error": "snapshot not found"}), 404
     return _apply_mixer_snapshot(snapshot, "mixer_panel:press")
+
+
+@app.route("/api/mixer/meters/start", methods=["POST"])
+def api_mixer_meters_start():
+    try:
+        data, status = mixer_client.start_meters()
+    except mixer_client.RelayError as exc:
+        return jsonify({"error": str(exc)}), 502
+    return jsonify(data), status
+
+
+@app.route("/api/mixer/meters/stop", methods=["POST"])
+def api_mixer_meters_stop():
+    try:
+        data, status = mixer_client.stop_meters()
+    except mixer_client.RelayError as exc:
+        return jsonify({"error": str(exc)}), 502
+    return jsonify(data), status
 
 
 @app.route("/api/mixer/meters")

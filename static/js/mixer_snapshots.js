@@ -18,12 +18,16 @@ function addActionRow(prefill) {
   const row = document.createElement("div");
   row.className = "save-dialog-row mixer-action-row";
 
-  const busInput = document.createElement("input");
-  busInput.type = "text";
-  busInput.placeholder = "Bus id";
+  const busInput = document.createElement("select");
   busInput.className = "mixer-action-bus";
   busInput.style.flex = "1";
-  busInput.value = (prefill && prefill.bus_id) || "";
+  for (let i = 1; i <= 8; i++) {
+    const opt = document.createElement("option");
+    opt.value = `bus${i}`;
+    opt.textContent = `bus${i}`;
+    busInput.appendChild(opt);
+  }
+  busInput.value = (prefill && prefill.bus_id) || "bus1";
 
   const slotSelect = document.createElement("select");
   slotSelect.className = "mixer-action-slot";
@@ -77,7 +81,10 @@ function collectActions() {
   return actions;
 }
 
+let editingSnapshotId = null;
+
 function openNewSnapshotDialog() {
+  editingSnapshotId = null;
   document.getElementById("snap-dialog-hint").textContent = "New snapshot";
   document.getElementById("snap-dialog-name").value = "";
   document.getElementById("snap-dialog-actions").innerHTML = "";
@@ -85,8 +92,26 @@ function openNewSnapshotDialog() {
   document.getElementById("snap-dialog").style.display = "block";
 }
 
+async function openEditSnapshotDialog(snapshotId) {
+  let detail;
+  try {
+    detail = await api("GET", `/api/mixer/snapshots/${snapshotId}`);
+  } catch (err) {
+    showToast(err.message, true);
+    return;
+  }
+  editingSnapshotId = snapshotId;
+  document.getElementById("snap-dialog-hint").textContent = `Edit "${detail.name}"`;
+  document.getElementById("snap-dialog-name").value = detail.name;
+  document.getElementById("snap-dialog-actions").innerHTML = "";
+  if (detail.actions.length === 0) addActionRow();
+  else detail.actions.forEach((action) => addActionRow(action));
+  document.getElementById("snap-dialog").style.display = "block";
+}
+
 function closeSnapDialog() {
   document.getElementById("snap-dialog").style.display = "none";
+  editingSnapshotId = null;
 }
 
 async function saveNewSnapshot() {
@@ -100,9 +125,10 @@ async function saveNewSnapshot() {
     showToast("Add at least one action with a level and/or mute set", true);
     return;
   }
+  const body = editingSnapshotId ? { id: editingSnapshotId, name, actions } : { name, actions };
   try {
-    await api("POST", "/api/mixer/snapshots", { name, actions });
-    showToast(`Created "${name}"`);
+    await api("POST", "/api/mixer/snapshots", body);
+    showToast(editingSnapshotId ? `Updated "${name}"` : `Created "${name}"`);
     closeSnapDialog();
     loadSnapshots();
   } catch (err) {
@@ -227,6 +253,11 @@ async function loadSnapshots() {
       }
     });
     actionsTd.appendChild(applyBtn);
+
+    const editBtn = document.createElement("button");
+    editBtn.textContent = "Edit";
+    editBtn.addEventListener("click", () => openEditSnapshotDialog(snapshot.id));
+    actionsTd.appendChild(editBtn);
 
     const renameBtn = document.createElement("button");
     renameBtn.textContent = "Rename";

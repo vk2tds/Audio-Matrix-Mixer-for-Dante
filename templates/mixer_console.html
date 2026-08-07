@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Mixer – Dante Web{% endblock %}
+{% block content %}
+<div class="panel">
+  <div class="hint">
+    Live, hands-on mixer control — direct pass-through to the mixer engine, no snapshot involved. Pick a bus, assign
+    a real input device/channel to a slot, route the bus's output to a device, and adjust levels/mutes. Changes here
+    take effect immediately. To route the MacBook microphone to the MacBook speakers: pick a bus below, assign
+    "MacBook Air Microphone" to an input slot and unmute it, then set the bus output device to "MacBook Air
+    Speakers" and unmute the output.
+  </div>
+  <div class="button-row" id="mixer-unreachable" style="display: none;">
+    <span class="hint" id="mixer-unreachable-msg"></span>
+  </div>
+  <div class="button-row" id="bus-tabs"></div>
+</div>
+
+<div class="panel" id="bus-detail" style="display: none;">
+  <div class="save-dialog-row">
+    <label for="bus-name-input">Bus name</label>
+    <input type="text" id="bus-name-input" placeholder="Bus name">
+    <button type="button" id="bus-name-save-btn">Rename</button>
+  </div>
+
+  <h3>Output</h3>
+  <div class="save-dialog-row">
+    <label for="output-device-select">Device</label>
+    <select id="output-device-select"><option value="">(default)</option></select>
+    <label for="output-level-input">dB</label>
+    <input type="number" step="0.5" id="output-level-input" style="width: 90px;">
+    <button type="button" id="output-mute-btn">Mute</button>
+    <div class="vu-bar" id="vu-output"><div class="bar-fill"></div></div>
+  </div>
+
+  <h3>Inputs</h3>
+  <table id="slots-table">
+    <thead>
+      <tr>
+        <th>Slot</th>
+        <th>Device</th>
+        <th>Channel</th>
+        <th>dB</th>
+        <th></th>
+        <th>VU</th>
+      </tr>
+    </thead>
+    <tbody id="slots-rows"></tbody>
+  </table>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/mixer_console.js') }}"></script>
+{% endblock %}
