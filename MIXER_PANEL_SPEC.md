@@ -26,13 +26,15 @@ today.
 
 ## 2. Relationship to DanteMixer
 
-Dante-web proxies to DanteMixer's Web API (per `DanteMixer/SPEC.md` §6-7)
-the same way it already proxies to `netaudio`'s relay — a thin
-`mixer_client.py` mirroring `netaudio_client.py`. Until DanteMixer actually
-has a running Web API, these pages should behave like existing pages do when
-their daemon is unreachable (a clear "mixer daemon unreachable" state, not
-an ambiguous error) — this app already has that pattern built in, so the
-GUI work isn't blocked on DanteMixer being finished.
+Dante-web proxies to DanteMixer's Web API (per the sibling
+[RealTime-MacOS-Audio-Mixer](https://github.com/vk2tds/RealTime-MacOS-Audio-Mixer)
+repo's `SPEC.md` §6-7) the same way it already proxies to `netaudio`'s
+relay — a thin `mixer_client.py` mirroring `netaudio_client.py`. Until
+DanteMixer actually has a running Web API, these pages should behave like
+existing pages do when their daemon is unreachable (a clear "mixer daemon
+unreachable" state, not an ambiguous error) — this app already has that
+pattern built in, so the GUI work isn't blocked on DanteMixer being
+finished.
 
 ## 3. Data model
 
