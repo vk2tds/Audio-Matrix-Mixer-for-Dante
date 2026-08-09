@@ -176,6 +176,11 @@ def mixer_panel_page():
     return render_template("mixer_panel.html")
 
 
+@app.route("/mixer-meters")
+def mixer_meters_page():
+    return render_template("mixer_meters.html")
+
+
 # --- API proxy ---------------------------------------------------------
 
 

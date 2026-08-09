@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Mixer Meters – Audio Matrix Mixer for Dante{% endblock %}
+{% block content %}
+<div class="panel">
+  <div class="hint">
+    Every physical input channel currently in use by any bus, and every bus's output — all on one page, unlike the
+    Mixer Console (one bus at a time) or hand-placed Mixer Panel VU tiles. Live data from the mixer engine's real
+    meter stream.
+  </div>
+  <div class="button-row" id="mixer-meters-unreachable" style="display: none;">
+    <span class="hint" id="mixer-meters-unreachable-msg"></span>
+  </div>
+  <h3>Inputs</h3>
+  <div id="mm-inputs" class="meter-channels">
+    <div class="empty">No input channels in use yet — assign one on the <a href="/mixer-console">Mixer</a> page.</div>
+  </div>
+  <h3>Bus outputs</h3>
+  <div id="mm-buses" class="meter-channels"></div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/mixer_meters.js') }}"></script>
+{% endblock %}
