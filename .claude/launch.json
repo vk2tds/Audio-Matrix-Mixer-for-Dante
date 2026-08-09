@@ -3,7 +3,7 @@
   "configurations": [
     {
       "name": "dante-web",
-      "runtimeExecutable": "/Users/darryl/Documents/GitHub/Dante-web/.venv/bin/python",
+      "runtimeExecutable": "/Users/darryl/Documents/GitHub/Audio-Matrix-Mixer-for-Dante/.venv/bin/python",
       "runtimeArgs": ["dante_web_app.py"],
       "port": 5051
     }

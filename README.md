@@ -1,4 +1,4 @@
-# Dante-web
+# Audio Matrix Mixer for Dante
 
 A web-based control surface for Dante audio devices, built on top of
 [network-audio-controller](https://github.com/chris-ritsen/network-audio-controller)
