@@ -526,16 +526,18 @@ def api_mixer_assign_input(mixer_id, slot):
     body = request.get_json(force=True, silent=True) or {}
     device_uid = body.get("deviceUID")
     channel = body.get("channel")
+    channel2 = body.get("channel2")
     if not device_uid or channel is None:
         return jsonify({"error": "deviceUID and channel are required"}), 400
     return _mixer_console_call(
         "mixer:input_assign",
-        {"bus_id": mixer_id, "slot": slot, "deviceUID": device_uid, "channel": channel},
+        {"bus_id": mixer_id, "slot": slot, "deviceUID": device_uid, "channel": channel, "channel2": channel2},
         mixer_client.set_input,
         mixer_id,
         slot,
         device_uid,
         channel,
+        channel2,
     )
 
 

@@ -15,22 +15,31 @@ function dbToPercent(db) {
   return ((clamped + 60) / 60) * 100;
 }
 
+function meterDbFor(deviceUID, channel) {
+  const meter = latestMeters.inputs.find((m) => m.deviceUID === deviceUID && m.channel === channel);
+  return meter ? meter.peakDb : -96;
+}
+
 function updateVuBars() {
   const bus = currentBus();
   if (!bus) return;
 
   for (let slot = 0; slot < MIXER_SLOT_COUNT; slot++) {
-    const el = document.querySelector(`#vu-slot-${slot} .bar-fill`);
-    if (!el) continue;
+    const fills = document.querySelectorAll(`#vu-slot-${slot} .bar-fill`);
+    if (fills.length === 0) continue;
     const input = bus.inputs.find((i) => i.slot === slot);
-    let db = -96;
     if (input && input.inputChannel) {
-      const meter = latestMeters.inputs.find(
-        (m) => m.deviceUID === input.inputChannel.deviceUID && m.channel === input.inputChannel.channel
-      );
-      if (meter) db = meter.peakDb;
+      fills[0].style.width = `${dbToPercent(meterDbFor(input.inputChannel.deviceUID, input.inputChannel.channel))}%`;
+      if (fills[1]) {
+        const rightDb =
+          input.inputChannel.channel2 != null
+            ? meterDbFor(input.inputChannel.deviceUID, input.inputChannel.channel2)
+            : meterDbFor(input.inputChannel.deviceUID, input.inputChannel.channel);
+        fills[1].style.width = `${dbToPercent(rightDb)}%`;
+      }
+    } else {
+      fills.forEach((f) => (f.style.width = "0%"));
     }
-    el.style.width = `${dbToPercent(db)}%`;
   }
 
   const outEl = document.querySelector("#vu-output .bar-fill");
@@ -153,7 +162,7 @@ function renderBusDetail() {
   }
 }
 
-function populateChannelSelect(select, deviceUID, selectedChannel) {
+function populateChannelSelect(select, deviceUID, selectedChannel, { allowMono } = {}) {
   select.innerHTML = "";
   const device = deviceByUID(deviceUID);
   if (!device) {
@@ -161,13 +170,19 @@ function populateChannelSelect(select, deviceUID, selectedChannel) {
     return;
   }
   select.disabled = false;
+  if (allowMono) {
+    const monoOpt = document.createElement("option");
+    monoOpt.value = "";
+    monoOpt.textContent = "(mono)";
+    select.appendChild(monoOpt);
+  }
   for (let ch = 0; ch < device.inputChannelCount; ch++) {
     const opt = document.createElement("option");
     opt.value = ch;
     opt.textContent = `Ch ${ch + 1}`;
     select.appendChild(opt);
   }
-  select.value = selectedChannel != null ? selectedChannel : 0;
+  select.value = selectedChannel != null ? selectedChannel : allowMono ? "" : 0;
 }
 
 function renderSlotRow(busId, input) {
@@ -203,9 +218,37 @@ function renderSlotRow(busId, input) {
   channelTd.appendChild(channelSelect);
   tr.appendChild(channelTd);
 
+  const channel2Td = document.createElement("td");
+  const channel2Select = document.createElement("select");
+  populateChannelSelect(
+    channel2Select,
+    input.inputChannel && input.inputChannel.deviceUID,
+    input.inputChannel && input.inputChannel.channel2,
+    { allowMono: true }
+  );
+  channel2Td.appendChild(channel2Select);
+  tr.appendChild(channel2Td);
+
+  async function applyAssignment(label) {
+    if (!deviceSelect.value) return;
+    const channel2Raw = channel2Select.value;
+    try {
+      await api("PUT", `/api/mixer/mixers/${busId}/inputs/${input.slot}`, {
+        deviceUID: deviceSelect.value,
+        channel: Number(channelSelect.value),
+        channel2: channel2Raw === "" ? null : Number(channel2Raw),
+      });
+      showToast(label);
+      loadAll();
+    } catch (err) {
+      showToast(err.message, true);
+    }
+  }
+
   deviceSelect.addEventListener("change", async () => {
     if (!deviceSelect.value) {
       populateChannelSelect(channelSelect, null, null);
+      populateChannelSelect(channel2Select, null, null, { allowMono: true });
       try {
         await api("DELETE", `/api/mixer/mixers/${busId}/inputs/${input.slot}`);
         showToast(`Cleared input ${input.slot + 1}`);
@@ -216,31 +259,16 @@ function renderSlotRow(busId, input) {
       return;
     }
     populateChannelSelect(channelSelect, deviceSelect.value, 0);
-    try {
-      await api("PUT", `/api/mixer/mixers/${busId}/inputs/${input.slot}`, {
-        deviceUID: deviceSelect.value,
-        channel: 0,
-      });
-      showToast(`Assigned ${deviceByUID(deviceSelect.value).name} ch 1 to input ${input.slot + 1}`);
-      loadAll();
-    } catch (err) {
-      showToast(err.message, true);
-    }
+    populateChannelSelect(channel2Select, deviceSelect.value, null, { allowMono: true });
+    await applyAssignment(`Assigned ${deviceByUID(deviceSelect.value).name} ch 1 (mono) to input ${input.slot + 1}`);
   });
 
-  channelSelect.addEventListener("change", async () => {
-    if (!deviceSelect.value) return;
-    try {
-      await api("PUT", `/api/mixer/mixers/${busId}/inputs/${input.slot}`, {
-        deviceUID: deviceSelect.value,
-        channel: Number(channelSelect.value),
-      });
-      showToast(`Input ${input.slot + 1} now channel ${Number(channelSelect.value) + 1}`);
-      loadAll();
-    } catch (err) {
-      showToast(err.message, true);
-    }
-  });
+  channelSelect.addEventListener("change", () => applyAssignment(`Input ${input.slot + 1} left channel updated`));
+  channel2Select.addEventListener("change", () =>
+    applyAssignment(
+      channel2Select.value === "" ? `Input ${input.slot + 1} set to mono` : `Input ${input.slot + 1} now stereo`
+    )
+  );
 
   const levelTd = document.createElement("td");
   const levelInput = document.createElement("input");
@@ -281,9 +309,15 @@ function renderSlotRow(busId, input) {
   const vuBar = document.createElement("div");
   vuBar.className = "vu-bar";
   vuBar.id = `vu-slot-${input.slot}`;
-  const vuFill = document.createElement("div");
-  vuFill.className = "bar-fill";
-  vuBar.appendChild(vuFill);
+  const subBarCount = input.inputChannel && input.inputChannel.channel2 != null ? 2 : 1;
+  for (let i = 0; i < subBarCount; i++) {
+    const track = document.createElement("div");
+    track.className = "vu-bar-track";
+    const fill = document.createElement("div");
+    fill.className = "bar-fill";
+    track.appendChild(fill);
+    vuBar.appendChild(track);
+  }
   vuTd.appendChild(vuBar);
   tr.appendChild(vuTd);
 

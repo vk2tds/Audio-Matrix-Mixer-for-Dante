@@ -924,14 +924,22 @@ table.matrix th.group-col-span {
   background: repeating-linear-gradient(45deg, var(--border), var(--border) 4px, var(--panel) 4px, var(--panel) 8px);
 }
 
-/* Mixer Console inline VU bars (one per input slot + bus output) */
+/* Mixer Console inline VU bars (one per input slot + bus output). A slot
+   holds 1 sub-bar (mono) or 2 stacked sub-bars (true stereo, one per side)
+   inside the same fixed-width wrapper. */
 .vu-bar {
   width: 90px;
-  height: 8px;
-  background: var(--panel);
-  border-radius: 4px;
-  overflow: hidden;
   flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.vu-bar-track {
+  height: 6px;
+  background: var(--panel);
+  border-radius: 3px;
+  overflow: hidden;
 }
 
 .vu-bar .bar-fill {

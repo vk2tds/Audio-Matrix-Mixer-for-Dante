@@ -127,3 +127,13 @@ existing routing-focused nav items.
    of the placeholder fake random-walk animation (`wireVuPlaceholder`,
    removed). `/api/mixer/meters/start` and `/stop` proxy routes added
    alongside the SSE stream proxy that already existed.
+6. Stereo slots — **done, 2026-08-09**, matching the engine's stereo
+   upgrade (see the sibling repo's STATUS.md). Mixer Console's input rows
+   gained a "Right (blank = mono)" channel selector next to the existing
+   one (now labeled "Left/Mono"); the per-slot VU bar renders 1 sub-bar
+   for a mono slot or 2 stacked sub-bars for a true stereo one. The Mixer
+   Panel's VU tile `channels` mechanism (up to 2 independent `{bus_id,
+   slot}` references per tile) is unchanged and still only shows each
+   referenced slot's left/primary channel — showing a single slot's real
+   L+R pair on one Panel tile isn't wired up yet, tracked as a follow-up
+   if it turns out to matter in practice.
