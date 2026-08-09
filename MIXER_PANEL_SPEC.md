@@ -137,3 +137,18 @@ existing routing-focused nav items.
    referenced slot's left/primary channel — showing a single slot's real
    L+R pair on one Panel tile isn't wired up yet, tracked as a follow-up
    if it turns out to matter in practice.
+7. Button-model redesign — **done, 2026-08-09**. Two new button types
+   (`mute_input`, `mute_output` — live toggles on a bus slot's or output's
+   mute, always reflecting real mixer state, not local memory) plus three
+   new fields on `snapshot` buttons: `press_mode` (`press` unchanged
+   default, `toggle`, or `momentary`), `deselect_action` (`none` or
+   `zero` — resets every channel the snapshot set a level on back to
+   0dB), and `group` (a plain string — buttons sharing one are mutually
+   exclusive, selecting one deselects any other currently-selected
+   member first). Toggle/momentary "on" state is tracked locally per
+   browser tab, the same pattern the routing Panel already uses for its
+   own press/reverse toggle. No backend changes needed — mute toggling
+   and the zero-deselect action both reuse the existing Mixer Console
+   routes directly. Richer design-time named radio groups (vs. this
+   simple per-button group-ID version) explicitly deferred to a later
+   pass.
