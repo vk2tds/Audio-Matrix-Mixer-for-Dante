@@ -918,6 +918,13 @@ table.matrix th.group-col-span {
   border-color: var(--good);
 }
 
+/* Mute buttons light red when engaged, not green — the standard audio-gear
+   convention, and worth keeping visually distinct from "scene selected". */
+.panel-button-mute.panel-button-lit {
+  background: var(--bad);
+  border-color: var(--bad);
+}
+
 .panel-button-missing {
   cursor: default;
   color: var(--text-dim);

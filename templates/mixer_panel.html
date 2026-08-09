@@ -37,11 +37,64 @@
     <select id="mp-dialog-type">
       <option value="snapshot">Snapshot button</option>
       <option value="vu">VU meter</option>
+      <option value="mute_input">Mute Input</option>
+      <option value="mute_output">Mute Output</option>
     </select>
   </div>
   <div class="save-dialog-row" id="mp-dialog-snapshot-row">
     <label for="mp-dialog-snapshot">Snapshot</label>
     <select id="mp-dialog-snapshot"></select>
+  </div>
+
+  <div id="mp-dialog-press-rows">
+    <div class="save-dialog-row">
+      <label for="mp-dialog-press-mode">Press mode</label>
+      <select id="mp-dialog-press-mode">
+        <option value="press">Press once (no reverse)</option>
+        <option value="toggle">Toggle (press again to deselect)</option>
+        <option value="momentary">Momentary (only while held)</option>
+      </select>
+    </div>
+    <div class="save-dialog-row" id="mp-dialog-deselect-row">
+      <label for="mp-dialog-deselect">On deselect</label>
+      <select id="mp-dialog-deselect">
+        <option value="none">Do nothing</option>
+        <option value="zero">Set volume of channels it set to 0dB</option>
+      </select>
+    </div>
+    <div class="save-dialog-row" id="mp-dialog-group-row">
+      <label for="mp-dialog-group">Radio group</label>
+      <input type="text" id="mp-dialog-group" placeholder="Optional — buttons sharing a group are mutually exclusive">
+    </div>
+  </div>
+
+  <div id="mp-dialog-mute-rows">
+    <div class="save-dialog-row">
+      <label for="mp-dialog-mute-bus">Bus</label>
+      <select id="mp-dialog-mute-bus">
+        <option value="bus1">bus1</option>
+        <option value="bus2">bus2</option>
+        <option value="bus3">bus3</option>
+        <option value="bus4">bus4</option>
+        <option value="bus5">bus5</option>
+        <option value="bus6">bus6</option>
+        <option value="bus7">bus7</option>
+        <option value="bus8">bus8</option>
+      </select>
+    </div>
+    <div class="save-dialog-row" id="mp-dialog-mute-slot-row">
+      <label for="mp-dialog-mute-slot">Input slot</label>
+      <select id="mp-dialog-mute-slot">
+        <option value="0">Input 1</option>
+        <option value="1">Input 2</option>
+        <option value="2">Input 3</option>
+        <option value="3">Input 4</option>
+        <option value="4">Input 5</option>
+        <option value="5">Input 6</option>
+        <option value="6">Input 7</option>
+        <option value="7">Input 8</option>
+      </select>
+    </div>
   </div>
 
   <div id="mp-dialog-vu-rows">
