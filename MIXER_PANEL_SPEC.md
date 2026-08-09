@@ -152,3 +152,10 @@ existing routing-focused nav items.
    routes directly. Richer design-time named radio groups (vs. this
    simple per-button group-ID version) explicitly deferred to a later
    pass.
+8. Mixer Meters (VU overview) — **done, 2026-08-09**. New `/mixer-meters`
+   page shows every physical input channel currently in use by any bus,
+   plus all 8 bus outputs, on one page — no per-slot resolution needed
+   at all, since the engine's `/meters` SSE `inputs` array is already
+   deduplicated per physical channel and `buses` always has all 8
+   entries. Reuses the netaudio Metering page's `.meter-channel` card
+   styling for visual consistency.
