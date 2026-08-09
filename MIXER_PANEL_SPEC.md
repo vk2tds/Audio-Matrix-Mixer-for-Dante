@@ -160,7 +160,18 @@ existing routing-focused nav items.
    entries. Reuses the netaudio Metering page's `.meter-channel` card
    styling for visual consistency.
 
-## 9. Future: named radio groups (design, not yet built)
+9. Dynamic bus/slot dropdowns — **done, 2026-08-09**, once the sibling
+   engine repo made bus/slot count runtime-configurable
+   (`DANTEMIXER_BUS_COUNT`/`DANTEMIXER_SLOT_COUNT`, see its STATUS.md).
+   Mixer Console, Mixer Snapshots' action-row builder, and Mixer Panel's
+   VU/Mute dialogs all previously hardcoded bus1-8/Input1-8 option lists
+   (item 3's bus-id dropdown fix included) — all three now derive their
+   dropdowns from live fetched mixer state, with the slot dropdown
+   rebuilding whenever the selected bus changes (slot count can differ
+   per bus). Falls back to a bus1-8 guess only if the daemon is
+   unreachable, matching the existing degradation pattern used elsewhere.
+
+## 10. Future: named radio groups (design, not yet built)
 
 Deferred per explicit decision (2026-08-09): item 7's radio groups ship
 as a plain string `group` field on each button — buttons sharing a
