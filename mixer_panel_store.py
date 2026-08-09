@@ -8,6 +8,7 @@ never touch routing, routing buttons never touch mixer volumes.
 import json
 import os
 import threading
+import uuid
 
 MIXER_PANEL_PATH = os.environ.get(
     "DANTE_WEB_MIXER_PANEL_PATH", os.path.join(os.path.dirname(__file__), "mixer_panel.json")
@@ -15,7 +16,24 @@ MIXER_PANEL_PATH = os.environ.get(
 
 _lock = threading.Lock()
 
-DEFAULT_PANEL = {"cols": 8, "rows": 4, "buttons": []}
+DEFAULT_PANEL = {"cols": 8, "rows": 4, "buttons": [], "radio_groups": []}
+
+
+def _migrate_legacy_groups(data):
+    """Any button['group'] string that isn't a known radio_groups[].id gets a
+    synthesized entry (id = name = the string) so old free-text groups keep
+    working with no manual migration step — see MIXER_PANEL_SPEC.md §10.
+    """
+    existing_ids = {g["id"] for g in data["radio_groups"]}
+    changed = False
+    for btn in data["buttons"]:
+        group = btn.get("group")
+        if group and group not in existing_ids:
+            data["radio_groups"].append({"id": group, "name": group})
+            existing_ids.add(group)
+            changed = True
+    if changed:
+        _save(data)
 
 
 def _load():
@@ -26,6 +44,8 @@ def _load():
     data.setdefault("cols", DEFAULT_PANEL["cols"])
     data.setdefault("rows", DEFAULT_PANEL["rows"])
     data.setdefault("buttons", [])
+    data.setdefault("radio_groups", [])
+    _migrate_legacy_groups(data)
     return data
 
 
@@ -43,6 +63,47 @@ def get_panel():
 
 def save_panel(cols, rows, buttons):
     with _lock:
-        data = {"cols": cols, "rows": rows, "buttons": buttons}
+        existing = _load()
+        data = {"cols": cols, "rows": rows, "buttons": buttons, "radio_groups": existing["radio_groups"]}
         _save(data)
     return data
+
+
+def list_radio_groups():
+    with _lock:
+        return _load()["radio_groups"]
+
+
+def create_radio_group(name):
+    with _lock:
+        data = _load()
+        group = {"id": str(uuid.uuid4()), "name": name}
+        data["radio_groups"].append(group)
+        _save(data)
+        return group
+
+
+def rename_radio_group(group_id, name):
+    with _lock:
+        data = _load()
+        group = next((g for g in data["radio_groups"] if g["id"] == group_id), None)
+        if group is None:
+            return None
+        group["name"] = name
+        _save(data)
+        return group
+
+
+def delete_radio_group(group_id):
+    """Deletes the group and clears button['group'] on any button that
+    referenced it — no dangling references left behind (MIXER_PANEL_SPEC.md
+    §10).
+    """
+    with _lock:
+        data = _load()
+        data["radio_groups"] = [g for g in data["radio_groups"] if g["id"] != group_id]
+        for btn in data["buttons"]:
+            if btn.get("group") == group_id:
+                btn["group"] = None
+        _save(data)
+        return data

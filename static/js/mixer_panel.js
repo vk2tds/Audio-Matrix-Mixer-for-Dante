@@ -24,7 +24,7 @@
 // VU meter data comes from the mixer engine's real /meters SSE stream —
 // see wireVuMeters() below.
 
-let panelData = { cols: 8, rows: 4, buttons: [] };
+let panelData = { cols: 8, rows: 4, buttons: [], radio_groups: [] };
 let allSnapshots = [];
 const snapshotDetailCache = new Map(); // snapshot_id -> full snapshot (with actions)
 let editMode = false;
@@ -568,6 +568,133 @@ function wireDialogBusSlotDependency(busSelectId, slotSelectId, { includeOutput 
   busSelect.addEventListener("change", () => populateSlotSelect(slotSelect, busSelect.value, { includeOutput }));
 }
 
+// --- radio groups: named groups replace the old free-text `group` field
+// (MIXER_PANEL_SPEC.md §10). Legacy free-string values are migrated to a
+// synthesized radio_groups entry server-side, so this dropdown only ever
+// deals with real {id, name} groups.
+
+function populateGroupSelect(select, selectedId) {
+  select.innerHTML =
+    `<option value="">None</option>` +
+    panelData.radio_groups.map((g) => `<option value="${g.id}">${escapeHtml(g.name)}</option>`).join("") +
+    `<option value="__new__">+ New group…</option>`;
+  select.value = selectedId && panelData.radio_groups.some((g) => g.id === selectedId) ? selectedId : "";
+}
+
+async function handleGroupSelectChange(select) {
+  if (select.value !== "__new__") return;
+  const name = prompt("New radio group name:", "");
+  if (!name || !name.trim()) {
+    select.value = ""; // cancelled — fall back to "None" rather than leaving "+ New group…" selected
+    return;
+  }
+  try {
+    const group = await api("POST", "/api/mixer-panel/radio-groups", { name: name.trim() });
+    panelData.radio_groups.push(group);
+    populateGroupSelect(select, group.id);
+  } catch (err) {
+    showToast(err.message, true);
+    select.value = "";
+  }
+}
+
+function groupMemberCount(groupId) {
+  return panelData.buttons.filter((b) => b.group === groupId).length;
+}
+
+function renderGroupsTable() {
+  const tbody = document.getElementById("mp-groups-rows");
+  if (panelData.radio_groups.length === 0) {
+    tbody.innerHTML =
+      '<tr><td class="empty" colspan="3">No radio groups yet — add one above, or set a button\'s press mode to "Toggle" and pick "+ New group…".</td></tr>';
+    return;
+  }
+  tbody.innerHTML = "";
+  for (const group of panelData.radio_groups) {
+    const tr = document.createElement("tr");
+
+    const nameTd = document.createElement("td");
+    nameTd.textContent = group.name;
+    tr.appendChild(nameTd);
+
+    const countTd = document.createElement("td");
+    const count = groupMemberCount(group.id);
+    countTd.textContent = `${count} button${count === 1 ? "" : "s"}`;
+    tr.appendChild(countTd);
+
+    const actionsTd = document.createElement("td");
+    actionsTd.style.display = "flex";
+    actionsTd.style.gap = "6px";
+
+    const renameBtn = document.createElement("button");
+    renameBtn.type = "button";
+    renameBtn.textContent = "Rename";
+    renameBtn.addEventListener("click", async () => {
+      const name = prompt("Rename radio group:", group.name);
+      if (!name || !name.trim() || name.trim() === group.name) return;
+      try {
+        const updated = await api("PUT", `/api/mixer-panel/radio-groups/${group.id}`, { name: name.trim() });
+        group.name = updated.name;
+        renderGroupsTable();
+        showToast(`Renamed to "${updated.name}"`);
+      } catch (err) {
+        showToast(err.message, true);
+      }
+    });
+    actionsTd.appendChild(renameBtn);
+
+    const deleteBtn = document.createElement("button");
+    deleteBtn.type = "button";
+    deleteBtn.textContent = "Delete";
+    deleteBtn.addEventListener("click", async () => {
+      if (!confirm(`Delete group "${group.name}"? Its ${count} member button(s) will no longer be mutually exclusive.`)) return;
+      try {
+        await api("DELETE", `/api/mixer-panel/radio-groups/${group.id}`);
+        panelData.radio_groups = panelData.radio_groups.filter((g) => g.id !== group.id);
+        for (const btn of panelData.buttons) {
+          if (btn.group === group.id) btn.group = null;
+        }
+        renderGroupsTable();
+        showToast(`Deleted "${group.name}"`);
+      } catch (err) {
+        showToast(err.message, true);
+      }
+    });
+    actionsTd.appendChild(deleteBtn);
+
+    tr.appendChild(actionsTd);
+    tbody.appendChild(tr);
+  }
+}
+
+function openManageGroupsDialog() {
+  renderGroupsTable();
+  document.getElementById("mp-groups-new-name").value = "";
+  document.getElementById("mp-groups-dialog").style.display = "block";
+}
+
+function closeManageGroupsDialog() {
+  document.getElementById("mp-groups-dialog").style.display = "none";
+}
+
+async function addRadioGroup() {
+  const input = document.getElementById("mp-groups-new-name");
+  const name = input.value.trim();
+  if (!name) {
+    showToast("Enter a group name", true);
+    return;
+  }
+  try {
+    const group = await api("POST", "/api/mixer-panel/radio-groups", { name });
+    panelData.radio_groups.push(group);
+    input.value = "";
+    renderGroupsTable();
+    showToast(`Added "${group.name}"`);
+  } catch (err) {
+    showToast(err.message, true);
+  }
+}
+
 function openAddDialog(row, col) {
   editingButtonId = null;
   pendingAddCell = { row, col };
@@ -581,7 +708,7 @@ function openAddDialog(row, col) {
   document.getElementById("mp-dialog-color").value = "#2563eb";
   document.getElementById("mp-dialog-press-mode").value = "press";
   document.getElementById("mp-dialog-deselect").value = "none";
-  document.getElementById("mp-dialog-group").value = "";
+  populateGroupSelect(document.getElementById("mp-dialog-group"), null);
 
   const firstBus = busListForDialogs()[0] || "bus1";
   populateBusSelect(document.getElementById("mp-dialog-mute-bus"));
@@ -624,7 +751,7 @@ function openEditDialog(btn) {
 
   document.getElementById("mp-dialog-press-mode").value = btn.press_mode || "press";
   document.getElementById("mp-dialog-deselect").value = btn.deselect_action || "none";
-  document.getElementById("mp-dialog-group").value = btn.group || "";
+  populateGroupSelect(document.getElementById("mp-dialog-group"), btn.group || null);
 
   if (btn.type === "vu") {
     const channels = btn.channels || [];
@@ -742,8 +869,8 @@ async function saveDialogButton() {
     }
     btn.press_mode = document.getElementById("mp-dialog-press-mode").value;
     btn.deselect_action = btn.press_mode === "press" ? "none" : document.getElementById("mp-dialog-deselect").value;
-    const group = document.getElementById("mp-dialog-group").value.trim();
-    btn.group = btn.press_mode === "toggle" && group ? group : null;
+    const group = document.getElementById("mp-dialog-group").value;
+    btn.group = btn.press_mode === "toggle" && group && group !== "__new__" ? group : null;
   } else if (type === "vu") {
     const stereo = document.getElementById("mp-dialog-vu-count").value === "2";
     const bus1 = document.getElementById("mp-dialog-vu-bus1").value.trim();
@@ -842,6 +969,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   wireDialogBusSlotDependency("mp-dialog-mute-bus", "mp-dialog-mute-slot");
   wireDialogBusSlotDependency("mp-dialog-vu-bus1", "mp-dialog-vu-slot1", { includeOutput: true });
   wireDialogBusSlotDependency("mp-dialog-vu-bus2", "mp-dialog-vu-slot2", { includeOutput: true });
+  document.getElementById("mp-dialog-group").addEventListener("change", (e) => handleGroupSelectChange(e.target));
+  document.getElementById("mp-groups-manage-btn").addEventListener("click", openManageGroupsDialog);
+  document.getElementById("mp-groups-new-btn").addEventListener("click", addRadioGroup);
+  document.getElementById("mp-groups-close-btn").addEventListener("click", closeManageGroupsDialog);
   document.getElementById("mp-dialog-icon-pick-btn").addEventListener("click", () => {
     const wrap = document.getElementById("mp-icon-picker-wrap");
     const opening = wrap.style.display === "none";

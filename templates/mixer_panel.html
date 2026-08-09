@@ -17,8 +17,31 @@
     </div>
     <div class="hint-row-buttons">
       <a href="/mixer-snapshots" class="btn">Manage snapshots</a>
+      <button type="button" id="mp-groups-manage-btn">Manage groups</button>
       <button type="button" id="mp-edit-toggle-btn">Edit layout</button>
     </div>
+  </div>
+</div>
+
+<div class="panel" id="mp-groups-dialog" style="display: none;">
+  <div class="hint">Radio groups — buttons sharing a group are mutually exclusive.</div>
+  <div class="save-dialog-row">
+    <label for="mp-groups-new-name">New group</label>
+    <input type="text" id="mp-groups-new-name" placeholder="Group name" style="flex:1;">
+  </div>
+  <div class="button-row">
+    <button type="button" id="mp-groups-new-btn" class="primary">Add group</button>
+  </div>
+  <table id="mp-groups-table">
+    <thead>
+      <tr><th>Name</th><th>Members</th><th></th></tr>
+    </thead>
+    <tbody id="mp-groups-rows">
+      <tr><td class="empty" colspan="3">No radio groups yet — add one above, or set a button's press mode to "Toggle" and pick "+ New group…".</td></tr>
+    </tbody>
+  </table>
+  <div class="button-row">
+    <button type="button" id="mp-groups-close-btn">Close</button>
   </div>
 </div>
 
@@ -64,7 +87,7 @@
     </div>
     <div class="save-dialog-row" id="mp-dialog-group-row">
       <label for="mp-dialog-group">Radio group</label>
-      <input type="text" id="mp-dialog-group" placeholder="Optional — buttons sharing a group are mutually exclusive">
+      <select id="mp-dialog-group"></select>
     </div>
   </div>
 

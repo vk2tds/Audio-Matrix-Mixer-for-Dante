@@ -687,6 +687,38 @@ def api_mixer_panel_press(sid):
     return _apply_mixer_snapshot(snapshot, "mixer_panel:press")
 
 
+@app.route("/api/mixer-panel/radio-groups")
+def api_list_radio_groups():
+    return jsonify(mixer_panel_store.list_radio_groups())
+
+
+@app.route("/api/mixer-panel/radio-groups", methods=["POST"])
+def api_create_radio_group():
+    body = request.get_json(force=True, silent=True) or {}
+    name = (body.get("name") or "").strip()
+    if not name:
+        return jsonify({"error": "name is required"}), 400
+    return jsonify(mixer_panel_store.create_radio_group(name))
+
+
+@app.route("/api/mixer-panel/radio-groups/<gid>", methods=["PUT"])
+def api_rename_radio_group(gid):
+    body = request.get_json(force=True, silent=True) or {}
+    name = (body.get("name") or "").strip()
+    if not name:
+        return jsonify({"error": "name is required"}), 400
+    group = mixer_panel_store.rename_radio_group(gid, name)
+    if group is None:
+        return jsonify({"error": "group not found"}), 404
+    return jsonify(group)
+
+
+@app.route("/api/mixer-panel/radio-groups/<gid>", methods=["DELETE"])
+def api_delete_radio_group(gid):
+    data = mixer_panel_store.delete_radio_group(gid)
+    return jsonify({"success": True, **data})
+
+
 @app.route("/api/mixer/meters/start", methods=["POST"])
 def api_mixer_meters_start():
     try:

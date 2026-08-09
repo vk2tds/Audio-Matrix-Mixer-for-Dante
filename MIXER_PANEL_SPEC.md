@@ -171,14 +171,13 @@ existing routing-focused nav items.
    per bus). Falls back to a bus1-8 guess only if the daemon is
    unreachable, matching the existing degradation pattern used elsewhere.
 
-## 10. Future: named radio groups (design, not yet built)
+## 10. Named radio groups — **done, 2026-08-09**
 
-Deferred per explicit decision (2026-08-09): item 7's radio groups ship
-as a plain string `group` field on each button — buttons sharing a
-non-empty value are mutually exclusive, with no separate concept to
-manage. That's deliberately the minimum useful version. This section
-is the design for a richer version, so it doesn't need re-deriving from
-scratch when it's actually built.
+Item 7's radio groups originally shipped as a plain string `group` field
+on each button — buttons sharing a non-empty value were mutually
+exclusive, with no separate concept to manage. This section was the
+design for a richer version; kept below (mostly) as written, now with
+notes on what was actually built vs. adjusted along the way.
 
 **What's missing today**: a group only exists implicitly, as whatever
 string happens to appear on two or more buttons. There's no name, no
@@ -209,20 +208,37 @@ existing panels keep working with no manual migration step, they just
 get an unnamed-in-the-UI-sense group that displays its old string as the
 name until renamed.
 
-**UI**:
-- A "Manage groups" link next to "Manage snapshots" in the Mixer Panel
-  page's toolbar (same visual treatment), opening a page/dialog listing
-  each group by name with its member count and a rename/delete action —
-  mirrors Mixer Snapshots' own list-based management UI.
-- The button edit dialog's "Radio group" field becomes a `<select>`
-  populated from `radio_groups` (plus "None" and a "+ New group…" option
-  that prompts for a name inline) instead of a free-text `<input>` —
-  same fix pattern as the bus-id dropdown.
+**UI — built as designed, with one deliberate simplification**:
+- A "Manage groups" button next to "Manage snapshots" in the Mixer Panel
+  page's toolbar opens an in-page dialog (`#mp-groups-dialog`, same
+  `.panel`/`save-dialog-row` shell used elsewhere on this page) listing
+  each group by name with its member count and Rename/Delete actions,
+  plus an "Add group" row at the top. This is a lighter-weight modal
+  than Mixer Snapshots' full list page — groups only need name + member
+  count + rename/delete, not combine/detail-view/checkboxes, so a modal
+  covers the same functional ground (list, rename, delete, see member
+  count) without a new route/template. Rename/delete use `prompt()`/
+  `confirm()`, matching the existing pattern in `mixer_snapshots.js`.
+- The button edit dialog's "Radio group" field is a `<select>`
+  (`populateGroupSelect` in `mixer_panel.js`) populated from
+  `panelData.radio_groups`, plus "None" and a "+ New group…" option that
+  prompts for a name, POSTs it, and auto-selects the new group — same fix
+  pattern as the bus-id dropdown.
 - Deleting a group clears `group` back to null on every button that
-  referenced it (don't silently leave dangling references).
+  referenced it, server-side in `mixer_panel_store.delete_radio_group`
+  (not relying on the client to re-save the button list) — verified live:
+  deleting a group with a real member button left that button's `group`
+  field `null` in the persisted `mixer_panel.json` immediately.
 
 **What doesn't change**: `deselectGroupSiblings`'s actual logic (iterate
 `panelData.buttons`, find others with the same group value, apply their
-`deselect_action`) — that mechanism is already correct and doesn't care
+`deselect_action`) — that mechanism was already correct and doesn't care
 whether `group` holds a free string or a `radio_groups[].id`; only the
-*authoring* experience (naming, listing, avoiding typos) improves.
+*authoring* experience (naming, listing, avoiding typos) improved.
+
+**Migration**: `mixer_panel_store._migrate_legacy_groups` runs on every
+load — any button's legacy free-string `group` that isn't a known
+`radio_groups[].id` gets a synthesized `{id: group, name: group}` entry,
+persisted immediately so it shows up in "Manage groups" from then on. No
+manual migration step, and idempotent (a no-op once every group has a
+real entry).
