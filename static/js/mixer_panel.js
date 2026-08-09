@@ -534,6 +534,40 @@ function syncVuChannelCount() {
   document.getElementById("mp-dialog-vu-row2").style.display = stereo ? "flex" : "none";
 }
 
+// --- dialog bus/slot dropdowns: populated from live mixerStates so they
+// track whatever bus/slot count the engine is actually running (see
+// RealTime-MacOS-Audio-Mixer's DANTEMIXER_BUS_COUNT/DANTEMIXER_SLOT_COUNT),
+// not a hardcoded bus1-8/Input1-8 list. Falls back to a bus1-8 guess only
+// if the daemon is unreachable (mixerStates still empty).
+
+function busListForDialogs() {
+  return mixerStates.length > 0 ? mixerStates.map((b) => b.id) : Array.from({ length: 8 }, (_, i) => `bus${i + 1}`);
+}
+
+function slotCountForBus(busId) {
+  const bus = mixerStates.find((b) => b.id === busId);
+  return bus ? bus.inputs.length : 8;
+}
+
+function populateBusSelect(select) {
+  select.innerHTML = busListForDialogs()
+    .map((id) => `<option value="${id}">${id}</option>`)
+    .join("");
+}
+
+function populateSlotSelect(select, busId, { includeOutput } = {}) {
+  const slotCount = slotCountForBus(busId);
+  const outputOpt = includeOutput ? `<option value="">Output</option>` : "";
+  select.innerHTML =
+    outputOpt + Array.from({ length: slotCount }, (_, i) => `<option value="${i}">Input ${i + 1}</option>`).join("");
+}
+
+function wireDialogBusSlotDependency(busSelectId, slotSelectId, { includeOutput } = {}) {
+  const busSelect = document.getElementById(busSelectId);
+  const slotSelect = document.getElementById(slotSelectId);
+  busSelect.addEventListener("change", () => populateSlotSelect(slotSelect, busSelect.value, { includeOutput }));
+}
+
 function openAddDialog(row, col) {
   editingButtonId = null;
   pendingAddCell = { row, col };
@@ -548,12 +582,21 @@ function openAddDialog(row, col) {
   document.getElementById("mp-dialog-press-mode").value = "press";
   document.getElementById("mp-dialog-deselect").value = "none";
   document.getElementById("mp-dialog-group").value = "";
-  document.getElementById("mp-dialog-mute-bus").value = "bus1";
+
+  const firstBus = busListForDialogs()[0] || "bus1";
+  populateBusSelect(document.getElementById("mp-dialog-mute-bus"));
+  document.getElementById("mp-dialog-mute-bus").value = firstBus;
+  populateSlotSelect(document.getElementById("mp-dialog-mute-slot"), firstBus);
   document.getElementById("mp-dialog-mute-slot").value = "0";
+
   document.getElementById("mp-dialog-vu-count").value = "1";
-  document.getElementById("mp-dialog-vu-bus1").value = "bus1";
+  populateBusSelect(document.getElementById("mp-dialog-vu-bus1"));
+  document.getElementById("mp-dialog-vu-bus1").value = firstBus;
+  populateSlotSelect(document.getElementById("mp-dialog-vu-slot1"), firstBus, { includeOutput: true });
   document.getElementById("mp-dialog-vu-slot1").value = "";
-  document.getElementById("mp-dialog-vu-bus2").value = "bus1";
+  populateBusSelect(document.getElementById("mp-dialog-vu-bus2"));
+  document.getElementById("mp-dialog-vu-bus2").value = firstBus;
+  populateSlotSelect(document.getElementById("mp-dialog-vu-slot2"), firstBus, { includeOutput: true });
   document.getElementById("mp-dialog-vu-slot2").value = "";
   setDialogIcon(null);
   populateSnapshotSelect();
@@ -585,15 +628,24 @@ function openEditDialog(btn) {
 
   if (btn.type === "vu") {
     const channels = btn.channels || [];
+    const bus1 = (channels[0] && channels[0].bus_id) || busListForDialogs()[0] || "bus1";
+    const bus2 = (channels[1] && channels[1].bus_id) || bus1;
     document.getElementById("mp-dialog-vu-count").value = String(channels.length === 2 ? 2 : 1);
-    document.getElementById("mp-dialog-vu-bus1").value = (channels[0] && channels[0].bus_id) || "";
+    populateBusSelect(document.getElementById("mp-dialog-vu-bus1"));
+    document.getElementById("mp-dialog-vu-bus1").value = bus1;
+    populateSlotSelect(document.getElementById("mp-dialog-vu-slot1"), bus1, { includeOutput: true });
     document.getElementById("mp-dialog-vu-slot1").value = channels[0] && channels[0].slot != null ? String(channels[0].slot) : "";
-    document.getElementById("mp-dialog-vu-bus2").value = (channels[1] && channels[1].bus_id) || "";
+    populateBusSelect(document.getElementById("mp-dialog-vu-bus2"));
+    document.getElementById("mp-dialog-vu-bus2").value = bus2;
+    populateSlotSelect(document.getElementById("mp-dialog-vu-slot2"), bus2, { includeOutput: true });
     document.getElementById("mp-dialog-vu-slot2").value = channels[1] && channels[1].slot != null ? String(channels[1].slot) : "";
   }
 
   if (btn.type === "mute_input" || btn.type === "mute_output") {
-    document.getElementById("mp-dialog-mute-bus").value = btn.bus_id || "bus1";
+    const busId = btn.bus_id || busListForDialogs()[0] || "bus1";
+    populateBusSelect(document.getElementById("mp-dialog-mute-bus"));
+    document.getElementById("mp-dialog-mute-bus").value = busId;
+    populateSlotSelect(document.getElementById("mp-dialog-mute-slot"), busId);
     document.getElementById("mp-dialog-mute-slot").value = btn.slot != null ? String(btn.slot) : "0";
   }
 
@@ -787,6 +839,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("mp-dialog-type").addEventListener("change", syncDialogTypeVisibility);
   document.getElementById("mp-dialog-press-mode").addEventListener("change", syncPressModeVisibility);
   document.getElementById("mp-dialog-vu-count").addEventListener("change", syncVuChannelCount);
+  wireDialogBusSlotDependency("mp-dialog-mute-bus", "mp-dialog-mute-slot");
+  wireDialogBusSlotDependency("mp-dialog-vu-bus1", "mp-dialog-vu-slot1", { includeOutput: true });
+  wireDialogBusSlotDependency("mp-dialog-vu-bus2", "mp-dialog-vu-slot2", { includeOutput: true });
   document.getElementById("mp-dialog-icon-pick-btn").addEventListener("click", () => {
     const wrap = document.getElementById("mp-icon-picker-wrap");
     const opening = wrap.style.display === "none";

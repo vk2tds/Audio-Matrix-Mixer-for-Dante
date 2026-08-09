@@ -1,3 +1,13 @@
+let mixers = [];
+
+async function loadMixers() {
+  try {
+    mixers = await api("GET", "/api/mixer/mixers");
+  } catch {
+    mixers = []; // daemon unreachable — action rows fall back to a bus1-8/Input1-8 guess below
+  }
+}
+
 function formatUpdated(epochSeconds) {
   if (!epochSeconds) return "–";
   return new Date(epochSeconds * 1000).toLocaleString();
@@ -18,24 +28,38 @@ function addActionRow(prefill) {
   const row = document.createElement("div");
   row.className = "save-dialog-row mixer-action-row";
 
+  const busList = mixers.length > 0 ? mixers.map((b) => b.id) : Array.from({ length: 8 }, (_, i) => `bus${i + 1}`);
+
   const busInput = document.createElement("select");
   busInput.className = "mixer-action-bus";
   busInput.style.flex = "1";
-  for (let i = 1; i <= 8; i++) {
+  for (const busId of busList) {
     const opt = document.createElement("option");
-    opt.value = `bus${i}`;
-    opt.textContent = `bus${i}`;
+    opt.value = busId;
+    opt.textContent = busId;
     busInput.appendChild(opt);
   }
-  busInput.value = (prefill && prefill.bus_id) || "bus1";
+  busInput.value = (prefill && prefill.bus_id) || busList[0] || "bus1";
 
   const slotSelect = document.createElement("select");
   slotSelect.className = "mixer-action-slot";
   slotSelect.style.width = "110px";
-  slotSelect.innerHTML =
-    `<option value="">Output</option>` +
-    Array.from({ length: 8 }, (_, i) => `<option value="${i}">Input ${i + 1}</option>`).join("");
-  if (prefill && prefill.slot != null) slotSelect.value = String(prefill.slot);
+
+  function slotCountFor(busId) {
+    const bus = mixers.find((b) => b.id === busId);
+    return bus ? bus.inputs.length : 8; // fall back to 8 when daemon unreachable
+  }
+
+  function rebuildSlotOptions(preserveSlot) {
+    const slotCount = slotCountFor(busInput.value);
+    slotSelect.innerHTML =
+      `<option value="">Output</option>` +
+      Array.from({ length: slotCount }, (_, i) => `<option value="${i}">Input ${i + 1}</option>`).join("");
+    if (preserveSlot != null) slotSelect.value = String(preserveSlot);
+  }
+
+  rebuildSlotOptions(prefill && prefill.slot);
+  busInput.addEventListener("change", () => rebuildSlotOptions());
 
   const levelInput = document.createElement("input");
   levelInput.type = "number";
@@ -327,6 +351,7 @@ async function toggleDetail(afterRow, snapshotId) {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+  loadMixers();
   loadSnapshots();
   document.getElementById("combine-btn").addEventListener("click", combineSelected);
   document.getElementById("combine-clear-btn").addEventListener("click", () => {

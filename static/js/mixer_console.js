@@ -1,5 +1,3 @@
-const MIXER_SLOT_COUNT = 8;
-
 let devices = [];
 let mixers = [];
 let currentBusId = null;
@@ -24,7 +22,7 @@ function updateVuBars() {
   const bus = currentBus();
   if (!bus) return;
 
-  for (let slot = 0; slot < MIXER_SLOT_COUNT; slot++) {
+  for (let slot = 0; slot < bus.inputs.length; slot++) {
     const fills = document.querySelectorAll(`#vu-slot-${slot} .bar-fill`);
     if (fills.length === 0) continue;
     const input = bus.inputs.find((i) => i.slot === slot);
@@ -156,7 +154,7 @@ function renderBusDetail() {
 
   const tbody = document.getElementById("slots-rows");
   tbody.innerHTML = "";
-  for (let slot = 0; slot < MIXER_SLOT_COUNT; slot++) {
+  for (let slot = 0; slot < bus.inputs.length; slot++) {
     const input = bus.inputs.find((i) => i.slot === slot) || { slot, inputChannel: null, levelDb: 0, muted: true };
     tbody.appendChild(renderSlotRow(bus.id, input));
   }
