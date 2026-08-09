@@ -159,3 +159,59 @@ existing routing-focused nav items.
    deduplicated per physical channel and `buses` always has all 8
    entries. Reuses the netaudio Metering page's `.meter-channel` card
    styling for visual consistency.
+
+## 9. Future: named radio groups (design, not yet built)
+
+Deferred per explicit decision (2026-08-09): item 7's radio groups ship
+as a plain string `group` field on each button — buttons sharing a
+non-empty value are mutually exclusive, with no separate concept to
+manage. That's deliberately the minimum useful version. This section
+is the design for a richer version, so it doesn't need re-deriving from
+scratch when it's actually built.
+
+**What's missing today**: a group only exists implicitly, as whatever
+string happens to appear on two or more buttons. There's no name, no
+list of a group's members to review, no rename, no way to see "which
+buttons are in this group" without opening each one's edit dialog and
+checking its `group` field. Typos silently create a new group instead of
+joining an existing one (the same class of problem the bus-id free-text
+field had before it became a dropdown — see item 3's fix and its
+motivating incident).
+
+**Proposed data model** — a `radio_groups` array alongside `buttons` in
+`mixer_panel.json`:
+```
+{
+  "cols": 8, "rows": 4,
+  "buttons": [...],           # unchanged shape, but "group" becomes a
+                               # radio_groups[].id reference, not a free
+                               # string
+  "radio_groups": [
+    {"id": "<uuid>", "name": "Scene select"}
+  ]
+}
+```
+Migration for existing data: any button with a non-empty legacy `group`
+string that doesn't match a `radio_groups[].id` gets a synthesized entry
+(`id` = the string itself, `name` = the string) created on first load —
+existing panels keep working with no manual migration step, they just
+get an unnamed-in-the-UI-sense group that displays its old string as the
+name until renamed.
+
+**UI**:
+- A "Manage groups" link next to "Manage snapshots" in the Mixer Panel
+  page's toolbar (same visual treatment), opening a page/dialog listing
+  each group by name with its member count and a rename/delete action —
+  mirrors Mixer Snapshots' own list-based management UI.
+- The button edit dialog's "Radio group" field becomes a `<select>`
+  populated from `radio_groups` (plus "None" and a "+ New group…" option
+  that prompts for a name inline) instead of a free-text `<input>` —
+  same fix pattern as the bus-id dropdown.
+- Deleting a group clears `group` back to null on every button that
+  referenced it (don't silently leave dangling references).
+
+**What doesn't change**: `deselectGroupSiblings`'s actual logic (iterate
+`panelData.buttons`, find others with the same group value, apply their
+`deselect_action`) — that mechanism is already correct and doesn't care
+whether `group` holds a free string or a `radio_groups[].id`; only the
+*authoring* experience (naming, listing, avoiding typos) improves.
