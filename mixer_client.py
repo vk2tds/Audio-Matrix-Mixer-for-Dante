@@ -88,11 +88,11 @@ def set_output_mute(mixer_id, muted):
     return _request("PUT", f"/mixers/{quote(mixer_id, safe='')}/output/mute", {"muted": muted})
 
 
-def set_output_route(mixer_id, device_name):
+def set_output_route(mixer_id, device_name, channel=None):
     return _request(
         "PUT",
         f"/mixers/{quote(mixer_id, safe='')}/output/route",
-        {"device": device_name},
+        {"device": device_name, "channel": channel},
     )
 
 

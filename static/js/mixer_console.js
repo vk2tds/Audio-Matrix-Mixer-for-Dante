@@ -146,6 +146,7 @@ function renderBusDetail() {
     outSelect.appendChild(opt);
   }
   outSelect.value = bus.output.device === "(default)" ? "" : bus.output.device;
+  populateOutputChannelSelect(bus.output.device === "(default)" ? "" : bus.output.device, bus.output.channel);
 
   document.getElementById("output-level-input").value = bus.output.levelDb;
   const outMuteBtn = document.getElementById("output-mute-btn");
@@ -158,6 +159,35 @@ function renderBusDetail() {
     const input = bus.inputs.find((i) => i.slot === slot) || { slot, inputChannel: null, levelDb: 0, muted: true };
     tbody.appendChild(renderSlotRow(bus.id, input));
   }
+}
+
+function deviceByName(name) {
+  return devices.find((d) => d.name === name);
+}
+
+// Which stereo pair of a multi-output-channel device (e.g. Dante Virtual
+// Soundcard's 32) a bus's output lands on — see the sibling engine repo's
+// PERFORMANCE.md-adjacent fix: without this, every bus routed to the same
+// device silently landed on channels 1/2 with no way to tell or change it.
+// Hidden entirely for devices with only one stereo pair (nothing to choose).
+function populateOutputChannelSelect(deviceName, selectedPair) {
+  const select = document.getElementById("output-channel-select");
+  const label = document.getElementById("output-channel-label");
+  const device = deviceByName(deviceName);
+  const pairCount = device ? Math.floor(device.outputChannelCount / 2) : 0;
+  if (!device || pairCount <= 1) {
+    select.style.display = "none";
+    label.style.display = "none";
+    select.innerHTML = "";
+    return;
+  }
+  select.style.display = "";
+  label.style.display = "";
+  select.innerHTML = Array.from(
+    { length: pairCount },
+    (_, i) => `<option value="${i}">Output ${i * 2 + 1}/${i * 2 + 2}</option>`
+  ).join("");
+  select.value = String(selectedPair ?? 0);
 }
 
 function populateChannelSelect(select, deviceUID, selectedChannel, { allowMono } = {}) {
@@ -340,9 +370,24 @@ function wireBusControls() {
   document.getElementById("output-device-select").addEventListener("change", async (e) => {
     const bus = currentBus();
     if (!bus || !e.target.value) return;
+    populateOutputChannelSelect(e.target.value, 0);
     try {
-      await api("PUT", `/api/mixer/mixers/${bus.id}/output/route`, { device: e.target.value });
+      await api("PUT", `/api/mixer/mixers/${bus.id}/output/route`, { device: e.target.value, channel: 0 });
       showToast(`${bus.id} output routed to "${e.target.value}"`);
+      loadAll();
+    } catch (err) {
+      showToast(err.message, true);
+    }
+  });
+
+  document.getElementById("output-channel-select").addEventListener("change", async (e) => {
+    const bus = currentBus();
+    const deviceName = document.getElementById("output-device-select").value;
+    if (!bus || !deviceName) return;
+    const channel = Number(e.target.value);
+    try {
+      await api("PUT", `/api/mixer/mixers/${bus.id}/output/route`, { device: deviceName, channel });
+      showToast(`${bus.id} output moved to channels ${channel * 2 + 1}/${channel * 2 + 2}`);
       loadAll();
     } catch (err) {
       showToast(err.message, true);

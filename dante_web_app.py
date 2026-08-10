@@ -613,8 +613,14 @@ def api_mixer_set_output_route(mixer_id):
     device_name = (body.get("device") or "").strip()
     if not device_name:
         return jsonify({"error": "device is required"}), 400
+    channel = body.get("channel")
     return _mixer_console_call(
-        "mixer:output_route", {"bus_id": mixer_id, "device": device_name}, mixer_client.set_output_route, mixer_id, device_name
+        "mixer:output_route",
+        {"bus_id": mixer_id, "device": device_name, "channel": channel},
+        mixer_client.set_output_route,
+        mixer_id,
+        device_name,
+        channel,
     )
 
 
