@@ -30,6 +30,12 @@ Not every Dante device supports every feature (gain, metering, encoding, AES67 i
 particular vary by manufacturer/firmware) — the UI degrades gracefully when
 a device doesn't report or accept a given control.
 
+**Audio fingerprinting** — a separate, standalone module in
+[`audio_fingerprint/`](audio_fingerprint/README.md): fingerprint a music
+library, then listen on a system audio input and identify what's playing
+(filename + embedded tags), with a minimal HTTP export for pulling that
+result over the network. Not yet integrated into the Flask app above.
+
 **Mixer caveat:** the Mixer pages are a client for
 [RealTime-MacOS-Audio-Mixer](https://github.com/vk2tds/RealTime-MacOS-Audio-Mixer),
 a separate macOS mixing engine that's still under active development and not yet
