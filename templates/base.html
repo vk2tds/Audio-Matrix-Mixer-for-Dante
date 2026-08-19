@@ -7,13 +7,21 @@
   <script>
     document.documentElement.setAttribute("data-theme", localStorage.getItem("dante-web-theme") || "light");
   </script>
+  <link rel="icon" href="{{ url_for('static', filename='branding/favicon.ico') }}" sizes="any">
+  <link rel="icon" href="{{ url_for('static', filename='branding/favicon-plate.svg') }}" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='branding/apple-touch-icon.png') }}">
+  <link rel="manifest" href="{{ url_for('static', filename='branding/site.webmanifest') }}">
+  <meta name="theme-color" content="#6D5EF5">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename=fontawesome_css) }}">
 </head>
 <body>
   {% if not hide_chrome %}
   <header class="topbar">
-    <h1>Matrix Mixer</h1>
+    <h1 class="brand">
+      <img src="{{ url_for('static', filename='branding/icon-mark.svg') }}" alt="" width="20" height="20">
+      Matrix Mixer
+    </h1>
     <nav class="tabs">
       <a href="/">Devices</a>
       <a href="/routing">Routing</a>

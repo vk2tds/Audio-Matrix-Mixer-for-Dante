@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 430 48" fill="none">
+  <!-- For use on LIGHT backgrounds -->
+  <defs>
+    <linearGradient id="outGrad" x1="34" y1="18" x2="46" y2="30" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#6D5EF5"/>
+      <stop offset="1" stop-color="#2DD4BF"/>
+    </linearGradient>
+  </defs>
+  <g>
+    <circle cx="24" cy="8" r="1.6" fill="#9496AC" opacity="0.45"/>
+    <circle cx="40" cy="8" r="1.6" fill="#9496AC" opacity="0.45"/>
+    <circle cx="24" cy="40" r="1.6" fill="#9496AC" opacity="0.45"/>
+    <circle cx="8" cy="24" r="1.6" fill="#9496AC" opacity="0.45"/>
+    <path d="M8,14 C22,14 26,20 40,24" stroke="#2DD4BF" stroke-width="2.6" stroke-linecap="round"/>
+    <path d="M8,34 C22,34 26,28 40,24" stroke="#6D5EF5" stroke-width="2.6" stroke-linecap="round"/>
+    <circle cx="8" cy="14" r="3.4" fill="#2DD4BF"/>
+    <circle cx="8" cy="34" r="3.4" fill="#6D5EF5"/>
+    <circle cx="40" cy="24" r="4.4" fill="url(#outGrad)"/>
+  </g>
+  <text x="62" y="31" font-family="'Poppins','Segoe UI',system-ui,sans-serif" font-size="22" font-weight="600" fill="#1A1B2E" letter-spacing="0.2">Audio Matrix Mixer for Dante</text>
+</svg>

@@ -5,8 +5,15 @@
   --border: #dde1e6;
   --text: #1a1d21;
   --text-dim: #666e79;
-  --accent: #2563eb;
-  --accent-dim: #dbe8fe;
+  /* Brand indigo, from the logo kit (audio-matrix-mixer-for-dante-logo-kit
+     README's Colors section) — same palette as the Radio Audio
+     Fingerprinting sister app, so the two read as one toolkit. Was a
+     generic blue (#2563eb) before the kit existed. --accent-dim derives
+     from --accent via color-mix (already an established pattern in this
+     file, see .badge.good below) instead of a hand-picked hex, so it
+     can't drift out of sync with --accent again. */
+  --accent: #6D5EF5;
+  --accent-dim: color-mix(in srgb, var(--accent) 12%, var(--panel));
   --good: #16a34a;
   --bad: #dc2626;
   --warn: #b45309;
@@ -21,8 +28,11 @@
   --border: #2a313c;
   --text: #e6e9ee;
   --text-dim: #8a94a3;
-  --accent: #4da3ff;
-  --accent-dim: #2a5c8a;
+  /* Kit's dark-bg indigo variant (#8B7FFF, brighter than the light-bg
+     #6D5EF5) — the kit calls out a brighter shade specifically for
+     contrast on dark surfaces. */
+  --accent: #8B7FFF;
+  --accent-dim: color-mix(in srgb, var(--accent) 22%, var(--panel));
   --good: #3ecf6e;
   --bad: #ef5b5b;
   --warn: #e6b422;
@@ -55,6 +65,16 @@ header.topbar h1 {
   margin: 0;
   font-weight: 600;
   letter-spacing: 0.02em;
+}
+
+header.topbar h1.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+header.topbar h1.brand img {
+  flex-shrink: 0;
 }
 
 nav.tabs {

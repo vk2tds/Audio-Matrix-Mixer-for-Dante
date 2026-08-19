@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <!-- Audio Matrix Mixer for Dante mark: a routing matrix (faint grid) with two input
+       nodes converging through patched lines into one output "button" node -->
+  <defs>
+    <linearGradient id="outGrad" x1="34" y1="18" x2="46" y2="30" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#6D5EF5"/>
+      <stop offset="1" stop-color="#2DD4BF"/>
+    </linearGradient>
+  </defs>
+  <!-- faint matrix lattice -->
+  <circle cx="24" cy="8" r="1.6" fill="#9496AC" opacity="0.45"/>
+  <circle cx="40" cy="8" r="1.6" fill="#9496AC" opacity="0.45"/>
+  <circle cx="24" cy="40" r="1.6" fill="#9496AC" opacity="0.45"/>
+  <circle cx="8" cy="24" r="1.6" fill="#9496AC" opacity="0.45"/>
+  <!-- routed patch lines converging two inputs into one output -->
+  <path d="M8,14 C22,14 26,20 40,24" stroke="#2DD4BF" stroke-width="2.6" stroke-linecap="round"/>
+  <path d="M8,34 C22,34 26,28 40,24" stroke="#6D5EF5" stroke-width="2.6" stroke-linecap="round"/>
+  <!-- input nodes -->
+  <circle cx="8" cy="14" r="3.4" fill="#2DD4BF"/>
+  <circle cx="8" cy="34" r="3.4" fill="#6D5EF5"/>
+  <!-- output / recall-button node -->
+  <circle cx="40" cy="24" r="4.4" fill="url(#outGrad)"/>
+</svg>

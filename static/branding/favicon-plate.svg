@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+  <defs>
+    <linearGradient id="plateGrad" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#6D5EF5"/>
+      <stop offset="1" stop-color="#2DD4BF"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="48" height="48" rx="12" fill="url(#plateGrad)"/>
+  <circle cx="24" cy="8" r="1.6" fill="#FFFFFF" opacity="0.4"/>
+  <circle cx="40" cy="8" r="1.6" fill="#FFFFFF" opacity="0.4"/>
+  <circle cx="24" cy="40" r="1.6" fill="#FFFFFF" opacity="0.4"/>
+  <circle cx="8" cy="24" r="1.6" fill="#FFFFFF" opacity="0.4"/>
+  <path d="M8,14 C22,14 26,20 40,24" stroke="#FFFFFF" stroke-width="2.6" stroke-linecap="round" fill="none" opacity="0.95"/>
+  <path d="M8,34 C22,34 26,28 40,24" stroke="#FFFFFF" stroke-width="2.6" stroke-linecap="round" fill="none" opacity="0.75"/>
+  <circle cx="8" cy="14" r="3.4" fill="#FFFFFF"/>
+  <circle cx="8" cy="34" r="3.4" fill="#FFFFFF" opacity="0.85"/>
+  <circle cx="40" cy="24" r="4.4" fill="#FFFFFF"/>
+</svg>
