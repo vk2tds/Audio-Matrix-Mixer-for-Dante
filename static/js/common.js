@@ -187,7 +187,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  document.querySelectorAll("nav.tabs a").forEach((a) => {
+  document.querySelectorAll(".sidebar .nav-links a").forEach((a) => {
     if (a.getAttribute("href") === window.location.pathname) {
       a.classList.add("active");
     }

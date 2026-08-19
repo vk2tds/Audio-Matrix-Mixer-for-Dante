@@ -17,12 +17,12 @@
 </head>
 <body>
   {% if not hide_chrome %}
-  <header class="topbar">
-    <h1 class="brand">
-      <img src="{{ url_for('static', filename='branding/icon-mark.svg') }}" alt="" width="20" height="20">
+  <nav class="sidebar">
+    <div class="brand">
+      <img src="{{ url_for('static', filename='branding/icon-mark.svg') }}" alt="" width="22" height="22">
       Matrix Mixer
-    </h1>
-    <nav class="tabs">
+    </div>
+    <div class="nav-links">
       <a href="/">Devices</a>
       <a href="/routing">Routing</a>
       <a href="/connections">Connections</a>
@@ -38,22 +38,26 @@
       <a href="/mixer-snapshots">Mixer Snapshots</a>
       <a href="/mixer-panel">Mixer Panel</a>
       <a href="/mixer-meters">Mixer Meters</a>
-    </nav>
-    <div class="conn">
-      <span class="dot" id="conn-dot"></span>
-      <span id="conn-label">connecting…</span>
     </div>
-    <button type="button" id="theme-toggle" class="theme-toggle" title="Toggle light/dark mode" aria-label="Toggle light/dark mode"></button>
-  </header>
+    <div class="nav-footer">
+      <div class="conn">
+        <span class="dot" id="conn-dot"></span>
+        <span id="conn-label">connecting…</span>
+      </div>
+      <button type="button" id="theme-toggle" class="theme-toggle" title="Toggle light/dark mode" aria-label="Toggle light/dark mode"></button>
+    </div>
+  </nav>
   {% endif %}
-  <main>
-    {% block content %}{% endblock %}
-  </main>
-  <footer class="app-footer">
-    This software is designed to work with Dante&reg; enabled devices using the open source netaudio library.
-    The authors of this software are in no way associated with Audinate Pty Ltd. Audinate&reg;, the Audinate
-    logo, and Dante&reg; are registered trademarks of Audinate Pty Ltd.
-  </footer>
+  <div class="content-col">
+    <main>
+      {% block content %}{% endblock %}
+    </main>
+    <footer class="app-footer">
+      This software is designed to work with Dante&reg; enabled devices using the open source netaudio library.
+      The authors of this software are in no way associated with Audinate Pty Ltd. Audinate&reg;, the Audinate
+      logo, and Dante&reg; are registered trademarks of Audinate Pty Ltd.
+    </footer>
+  </div>
   <script src="{{ url_for('static', filename='js/common.js') }}"></script>
   {% block scripts %}{% endblock %}
 </body>
