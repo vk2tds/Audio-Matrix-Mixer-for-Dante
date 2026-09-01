@@ -96,6 +96,79 @@ The app expects the daemon's relay at `http://127.0.0.1:9000` by default;
 override with the `NETAUDIO_RELAY_URL` environment variable if it's running
 elsewhere.
 
+## Unattended startup (surviving a reboot with no one at the keyboard)
+
+Three services keep this system running, each installed as a per-user
+**LaunchAgent** (`~/Library/LaunchAgents/`, `RunAtLoad` + `KeepAlive`):
+
+| Label | Runs | Log |
+|---|---|---|
+| `au.net.radio-active.netaudio-daemon` | `netaudio server run` (port 9000) | `logs/netaudio-daemon.log` |
+| `au.net.radio-active.dante-web` | `dante_web_app.py` (port 5051) | `logs/dante-web.log` |
+| `au.net.radio-active.dantemixer` | `DanteMixer` (from the sibling `RealTime-MacOS-Audio-Mixer` repo) | `RealTime-MacOS-Audio-Mixer/logs/dante_mixer.log` |
+
+**LaunchAgents only start once a user is logged into a GUI session** — unlike
+system-wide LaunchDaemons, they sit dormant at the login window after a
+reboot until someone authenticates. We hit this directly: a kernel panic
+(`apcie[2:lan-1gb]` PCIe completion timeout on the built-in Ethernet
+controller, 2026-09-01 05:30) rebooted the machine overnight, and none of the
+three services came up until the account was logged in by hand later that
+day.
+
+We deliberately chose **auto-login + immediate screen lock** over converting
+these to system-wide LaunchDaemons. Reasoning: `dante-web` and the daemon use
+CoreAudio (Dante Virtual Soundcard) — audio devices like that are typically
+unreliable or fail to initialize under a LaunchDaemon, which has no
+window-server/audio-session context. Auto-login keeps the same known-good
+GUI-session-based setup and just makes the login itself automatic.
+
+### Setup steps (manual — requires entering the account password, so this
+isn't scriptable)
+
+1. **System Settings → Users & Groups → Login Options → Automatic login** →
+   select the account. (FileVault must be off for this option to appear —
+   confirmed off on this machine.)
+2. **System Settings → Lock Screen** → set "Require password after screen
+   saver begins or display is turned off" to **Immediately**, and set the
+   screen saver / display-sleep timer short (e.g. 1 minute).
+
+Net effect: reboot → auto-login → the three LaunchAgents fire → screen locks
+itself within about a minute. No desktop is left exposed, and no one needs to
+be physically present for the services to come back after a crash or power
+loss.
+
+### Keep-alive review
+
+All three plists already carry the strongest built-in option —
+`<key>KeepAlive</key><true/>` — meaning launchd restarts the process
+unconditionally on any exit (crash or otherwise), with launchd's own default
+respawn throttle guarding against a crash-loop. No `ThrottleInterval` is set;
+the default is adequate here. Combined with auto-login, this covers both
+failure modes: KeepAlive handles a service dying while macOS stays up,
+auto-login handles macOS itself coming back after a panic or power cut.
+
+**Gap found while reviewing this**: `dante_web_app.py`'s own self-healing —
+the "Restart daemon" button and the automatic health-check restart in
+[`_restart_daemon_process`](dante_web_app.py:53) — deliberately avoids
+`netaudio server restart` (see the comment at
+[`api_restart_daemon`](dante_web_app.py:207)) and instead signals the PID in
+`logs/daemon.pid`. That pidfile is only ever written by `run.sh`
+([`run.sh`](run.sh:39)). In the current production setup the daemon is
+launched directly by the `netaudio-daemon` LaunchAgent, **not** via
+`run.sh`, so `logs/daemon.pid` never gets created — confirmed missing on
+this machine. Practically: the manual "Restart daemon" button and the
+automatic restart-on-stale-device-data health check are both silently
+no-ops right now, always failing with "No daemon pidfile found." This is the
+same self-healing path that would have kicked in for the recurring
+`STUDIO-ONE-AUX` "device did not respond" errors — it just isn't firing.
+
+Fix would be to make `_restart_daemon_process` target the LaunchAgent
+directly instead of a pidfile, e.g. `launchctl kickstart -k
+gui/$(id -u)/au.net.radio-active.netaudio-daemon` — that's the launchd-native
+equivalent of "signal the supervised process to restart" the code comment
+already describes doing manually, and needs no pidfile at all. Not applied
+yet — flagging for a decision before touching the restart code path.
+
 ## Icons (Font Awesome)
 
 The Panel page's icon picker is backed by [Font Awesome](https://fontawesome.com).

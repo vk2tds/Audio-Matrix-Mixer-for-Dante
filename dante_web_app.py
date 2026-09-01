@@ -1,6 +1,6 @@
 import logging
 import os
-import signal
+import subprocess
 import threading
 import time
 
@@ -19,7 +19,12 @@ import presets_store
 app = Flask(__name__)
 log = logging.getLogger("dante-web")
 
-DAEMON_PIDFILE = os.path.join(os.path.dirname(__file__), "logs", "daemon.pid")
+#: Label of the LaunchAgent that owns the netaudio daemon (see
+#: Audio-Matrix-Mixer-for-Dante's README, "Unattended startup and
+#: keep-alive") -- RunAtLoad + KeepAlive, so `launchctl kickstart -k` is
+#: the correct way to bounce it: launchd notices the kill and restarts it
+#: itself, same as it would for any other crash.
+NETAUDIO_DAEMON_LAUNCHD_LABEL = "au.net.radio-active.netaudio-daemon"
 
 # Font Awesome Pro is a paid license and can't be redistributed, so this repo
 # only ships Free (static/vendor/fontawesome-free/). If a licensed Pro kit has
@@ -51,33 +56,33 @@ _last_auto_restart = 0.0
 
 
 def _restart_daemon_process(kind, reason):
-    """Signal the daemon process run.sh is supervising; it notices the death
-    and restarts it, the same path already exercised by an actual crash.
-    Shared by the manual "Restart daemon" button and the auto-health-check.
+    """Bounces the netaudio daemon via launchd. Shared by the manual
+    "Restart daemon" button and the auto-health-check.
+
+    Previously signaled a PID read from logs/daemon.pid, written by
+    run.sh's own supervision loop -- but the daemon is now started
+    directly by its LaunchAgent (au.net.radio-active.netaudio-daemon),
+    not via run.sh, so that pidfile never gets created and this silently
+    never worked. `launchctl kickstart -k` is the launchd-native
+    replacement: it kills the job by label and launchd restarts it
+    itself. Deliberately not `netaudio server restart` -- that command
+    doesn't know about launchd's supervision and would race it for port
+    9000 (confirmed live: it left two daemons fighting over the port and
+    the supervisor stuck in a crash loop).
     """
+    target = f"gui/{os.getuid()}/{NETAUDIO_DAEMON_LAUNCHD_LABEL}"
     try:
-        with open(DAEMON_PIDFILE) as f:
-            pid = int(f.read().strip())
-    except (FileNotFoundError, ValueError):
-        error = "No daemon pidfile found — this only works when running via run.sh."
-        activity_log.log_event(kind, {"reason": reason}, ok=False, error=error)
+        subprocess.run(
+            ["launchctl", "kickstart", "-k", target],
+            check=True, capture_output=True, text=True, timeout=10,
+        )
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired, FileNotFoundError) as exc:
+        error = exc.stderr.strip() if isinstance(exc, subprocess.CalledProcessError) and exc.stderr else str(exc)
+        activity_log.log_event(kind, {"reason": reason, "target": target}, ok=False, error=error)
         return False, error
 
-    try:
-        os.kill(pid, 0)
-    except OSError:
-        error = f"Daemon process {pid} isn't running (stale pidfile)."
-        activity_log.log_event(kind, {"pid": pid, "reason": reason}, ok=False, error=error)
-        return False, error
-
-    try:
-        os.kill(pid, signal.SIGTERM)
-    except OSError as exc:
-        activity_log.log_event(kind, {"pid": pid, "reason": reason}, ok=False, error=str(exc))
-        return False, str(exc)
-
-    activity_log.log_event(kind, {"pid": pid, "reason": reason}, ok=True, error=None)
-    return True, f"Signaled daemon (pid {pid}) to stop — run.sh will restart it within ~5s."
+    activity_log.log_event(kind, {"reason": reason, "target": target}, ok=True, error=None)
+    return True, f"Restarted the netaudio daemon via launchd ({target})."
 
 
 def proxy(method, path, json_body=None):
@@ -206,13 +211,8 @@ def api_refresh():
 
 @app.route("/api/daemon/restart", methods=["POST"])
 def api_restart_daemon():
-    # Deliberately does NOT call `netaudio server restart` — that command
-    # doesn't know about run.sh's supervision loop and will race it for
-    # port 9000 (confirmed live: it left two daemons fighting over the
-    # port and the supervisor stuck in a crash loop). Instead this signals
-    # the exact process run.sh is tracking via its pidfile, and lets that
-    # same loop notice the death and restart it, the same path already
-    # exercised by an actual daemon crash.
+    # See _restart_daemon_process's docstring for why this goes through
+    # launchd rather than `netaudio server restart` directly.
     ok, message = _restart_daemon_process("daemon:restart", "manual")
     if not ok:
         return jsonify({"error": message}), 409
