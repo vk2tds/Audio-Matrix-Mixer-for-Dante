@@ -41,6 +41,97 @@ below by actually doing them over the wire:
   terminator before relying on it, and treat crosspoint routing over TCP as
   untested even though Mute is now confirmed working.
 
+The repo also picked up two Wireshark captures (`Matrix Discovery Startup
+and Running.pcapng`, `VU Meter.pcapng`) taken against the real device from
+the vendor's own PC app — see "Meter polling" and "Device discovery"
+below, both decoded from those captures.
+
+## Device discovery (UDP broadcast, port 11022)
+
+The vendor app finds the unit via a UDP broadcast handshake, independent of
+the TCP control protocol: `192.168.32.188:1500 → 255.255.255.255:11022`.
+The payload is mostly binary but has readable ASCII strings confirming
+earlier guesses with hard evidence:
+
+- **`USR-TCP232-T2`** — the exact embedded serial-to-Ethernet module model,
+  confirming the OUI-based guess ("Device identification" above) that this
+  box's TCP/IP port is a USR IOT bridge, not a bespoke stack.
+- `admin` / `admin` — the module's own default credentials (for its own
+  config interface, not necessarily the DP8004's).
+- `www.usr.cn` — the module manufacturer's domain, embedded for what looks
+  like a cloud/DDNS check-in feature of the module firmware. Not directly
+  relevant to matrix control, but worth knowing this module may phone home
+  on its own if it has WAN access.
+- The device's MAC (`9C A5 25 A6 C8 73`) and IP (`C0 A8 20 BC` =
+  `192.168.32.188`) are both embedded in the broadcast payload too.
+
+Not yet decoded in detail — the exact request/response framing of this
+discovery exchange — since it isn't needed if the IP is already known
+(as it is here). Relevant only if a future GUI wants to auto-discover the
+unit rather than using a configured IP.
+
+## Meter polling (undocumented in "Central Control") — VU meter feasibility
+
+**Yes, we have enough to build a live meter display.** This isn't part of
+the reverse-engineered "Central Control" protocol at all — it's a
+**second, separate protocol** the vendor's own PC app uses over the *same*
+TCP port 8234, with a different 4-byte preamble (`A5 A1 1A 5A`, not
+`A5 C3 3C 5A`). Fully characterized from `VU Meter.pcapng` (55 consecutive
+request/response pairs, byte-identical framing every single time):
+
+**Request** (28 bytes, sent roughly every 108 ms — measured 9.3 Hz over the
+whole capture — identical on every single occurrence):
+```
+A5 A1 1A 5A 05 02 01 02 00 00 06 00 02 00 00 00 00 00 00 00 19 02 00 00 E5 FD FF FF
+```
+`05 02 01 02 00 00` is a session/device token (see below); `06 00` looks
+like the command/register ID for "read meters"; the rest hasn't been
+decomposed further since replaying this exact fixed byte string is
+sufficient to trigger a response.
+
+**Response** (228 bytes, same on every occurrence except the actual meter
+values): 20-byte header, then a fixed array of **52 × 4-byte
+little-endian IEEE-754 float32** values (208 bytes) —
+
+```
+A5 A1 1A 5A 05 02 01 02 00 00 06 00 34 00 00 00 00 00 00 00 19 02 00 00 | <52 floats>
+```
+
+Decoded across all 55 samples:
+- **Odd-indexed floats (1, 3, 5, … 49 — 25 of them) are the actual
+  per-channel level readings, in dB.** Confirmed floor value **−100.0**
+  (silence/no signal). During this capture two groups were live: one pair
+  around −58 to −28 dB, and six channels moving together around −46 to
+  −15 dB — everything else sat flat at the −100.0 floor.
+- **Even-indexed floats (0, 2, 4, … 50) are always exactly `0.0`** across
+  every one of the 55 samples — a fixed filler/reserved slot alongside
+  each real reading, not a second meter ballistic (peak vs. RMS) as far as
+  this capture shows.
+- **The 52nd (last) float slot is not a real level** — it decodes to
+  nonsense (astronomically large/small values) and changes unpredictably
+  between messages, consistent with a raw counter, timestamp, or checksum
+  that only happens to overlap the float array's byte range, not with
+  reserving it as a 26th channel.
+
+So: **25 real metered points**, each a `[0.0 filler, dB float]` pair. 25
+doesn't map cleanly onto the DP8004's known 8 inputs + 8 outputs — it's
+likely including extra metering taps (pre/post-AFC, AutoMix bus points, a
+master) that aren't disambiguated yet. **Still open**: which slot index
+is which physical channel. Cheapest way to nail that down: poll while
+changing one channel at a time (mute it, or feed it a known tone) and see
+exactly which odd-indexed slot moves — same technique used to decode Gain,
+just applied to this protocol instead.
+
+An initial handshake happens once per TCP connection, before any polling:
+a `03 00` "hello" command (seen in `Matrix Discovery Startup and
+Running.pcapng`) returns a 6-byte session/device token
+(`05 02 01 02 00 00` in this capture) that then gets echoed as the first 6
+bytes of every subsequent request — including the meter-poll request
+above. Not fully decomposed field-by-field, but replaying the exact
+session token this device happened to hand out has worked consistently
+across the whole capture, so a real implementation would need to do this
+handshake once at connect time rather than hardcoding that 6-byte value.
+
 ## Device identification
 
 From the control app's Device Manage dialog and Device List panel:
