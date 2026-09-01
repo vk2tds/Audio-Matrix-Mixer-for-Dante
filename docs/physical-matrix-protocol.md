@@ -200,12 +200,32 @@ Full frames:
 |---|---|---|
 | Read | `01 01` | Input(`01`), channel 1 |
 
-Same two-byte `[I/O, channel]` shape as Mute's Read. **No Gain Set example
-captured at all** — this is a significant gap (see "Open questions"): the
-value encoding for an actual gain level (range, units, signed dB?) is
-completely unknown.
+Read has the same two-byte `[I/O, channel]` shape as Mute's Read.
 
-Full frame: `A5 C3 3C 5A FF 63 04 02 01 01 EE`
+**Set confirmed**, and fully decoded: `N=4`, data = `[I/O selector, channel,
+value-lo, value-hi]` — the value is a **signed 16-bit little-endian
+integer, in tenths of a dB** (divide by 10 for the displayed gain). Verified
+against six examples spanning −60.0 dB to +20.0 dB, all exact:
+
+| Gain | Value bytes (lo, hi) | Decoded |
+|---|---|---|
+| +10.0 dB | `64 00` | 100 → 10.0 |
+| 0.0 dB | `00 00` | 0 → 0.0 |
+| −10.0 dB | `9C FF` | −100 → −10.0 |
+| −60.0 dB | `A8 FD` | −600 → −60.0 |
+| +20.0 dB | `C8 00` | 200 → 20.0 |
+| +15.0 dB (input ch5) | `96 00` | 150 → 15.0 |
+
+Full frames:
+- Read: `A5 C3 3C 5A FF 63 04 02 01 01 EE`
+- Set input ch1 → +10.0 dB: `A5 C3 3C 5A FF 36 04 04 01 01 64 00 EE`
+- Set input ch1 → 0.0 dB: `A5 C3 3C 5A FF 36 04 04 01 01 00 00 EE`
+- Set input ch1 → −10.0 dB: `A5 C3 3C 5A FF 36 04 04 01 01 9C FF EE`
+- Set input ch1 → −60.0 dB: `A5 C3 3C 5A FF 36 04 04 01 01 A8 FD EE`
+- Set input ch1 → +20.0 dB: `A5 C3 3C 5A FF 36 04 04 01 01 C8 00 EE`
+- Set input ch5 → +15.0 dB: `A5 C3 3C 5A FF 36 04 04 01 05 96 00 EE`
+- Set output ch5 → 0.0 dB: `A5 C3 3C 5A FF 36 04 04 02 05 00 00 EE`
+- Set output ch4 → 0.0 dB: `A5 C3 3C 5A FF 36 04 04 02 04 00 00 EE`
 
 ### Line/Mic (`06`)
 
@@ -285,11 +305,13 @@ Full frame: `A5 C3 3C 5A FF 36 0D 02 03 00 EE`
 
 Ranked roughly by how much they block actually building the GUI:
 
-1. **Gain Set is completely uncaptured.** We have Gain *Read*'s query shape
-   (`[I/O, channel]`) but zero information about the Set frame: does it add
-   a third byte? What's the value encoding — raw dB, a 0–100/0–127 range, a
-   signed byte for negative gain? This blocks the single most basic mixer
-   operation (adjusting a fader).
+1. ~~Gain Set is completely uncaptured~~ — **resolved**: `N=4`,
+   `[I/O, channel, value-lo, value-hi]`, signed 16-bit little-endian tenths
+   of a dB. See the Gain section above. Note for other controls still
+   using a single `00`/`01` byte today (Feedback Level, Increase/Decreases)
+   — worth checking whether they're actually multi-byte signed values too
+   once real examples turn up, now that we know this device uses that
+   encoding at least for Gain.
 2. ~~Mute Set is uncaptured~~ — **resolved**: confirmed via
    `2NBC_MatrixMixer`'s working `updateMatrixMute`, see the Mute section
    above.
