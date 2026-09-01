@@ -27,26 +27,33 @@ From the control app's Device Manage dialog and Device List panel:
 | Gateway | `192.168.32.1` |
 | MAC | `9C-A5-25-A6-C8-73` |
 
-**Likely vendor: Guangzhou DSPPA Audio Co.** (dsppatech.com / dsppacs.com) —
-not yet confirmed against this exact unit, but their DP70xx/DP80xx
-"professional audio processor" family (e.g. the
-[DP8050 datasheet](https://www.dsppatech.com/uploads/file/data-sheet-dp8050-8-in-8-out-professional-ai-audio-processor.pdf))
-matches the observed feature set closely: 8 in/8 out, AFC, AEC, ANC, Auto
-Mix, Matrix Mix, Noise Gate, PEQ — and DSPPA's own literature for that
-family explicitly describes "central control via RS232, RS485, and TCP/IP"
-for exactly this kind of unit, which lines up with the "Central Control"
-dialog name. `D521881` doesn't look like a DSPPA model number, though —
-more likely a per-unit serial/device ID — so treat the vendor match as
-strong-but-unconfirmed until checked against the actual box's markings or
-a DSPPA support contact.
+**Confirmed: Guangzhou DSPPA Audio Co., model DP8004** — "8-channel
+Conference Audio Processor with 4x4 Dante"
+([product page](https://www.dsppatech.com/product/dp8004-8channels-conference-audio-processor-with-4x4-dante.html),
+[datasheet PDF](https://www.dsppatech.com/uploads/file/20210422/11/data-sheetdp8004-8-channels-conference.pdf) —
+image-based, no protocol detail in it). 8 in/8 out total, with 4 of each
+side being Dante (matches inputs A–D showing Dante source, E–H showing
+Analog, in the signal-chain screenshot above) and built-in feedback
+suppression, auto-mix, matrix mix, EQ, crossover, and compressor — matches
+every control we've reverse-engineered below. `D521881` is this specific
+unit's serial/device ID, not the model number.
+
+Confirmed control interfaces (from the product page): **RS232** (Phoenix
+connector), **RS485** (Phoenix connector), **TCP/IP** (RJ-45), **USB**
+(Micro-B, driver-free), and a **GPIO** Phoenix connector ("Machine Archive,
+customizable"). No public protocol document was found for the DP8004
+specifically after searching — DSPPA's own download page doesn't list the
+DP processor line at all, only their PA/intercom products. If official
+protocol documentation is wanted, DSPPA's export contact is
+export@dsppa.com / +86 20-37166520.
 
 The MAC's OUI (`9C-A5-25`) is registered to **Shandong USR IOT Technology
 Limited** — a maker of serial-to-Ethernet bridge modules. That's a good fit
-for how a DSP box like this typically exposes a TCP/IP port: an embedded
-USR IOT module bridging its internal RS232/RS485 UART onto the network,
-rather than a from-scratch IP stack. If so, the byte protocol reverse-
-engineered below likely rides unchanged over TCP as well as serial — see
-"Transport layer" at the bottom.
+for how the DP8004 exposes its RJ-45 TCP/IP port: likely an embedded USR
+IOT module bridging its internal RS232/RS485 UART onto the network, rather
+than a from-scratch IP stack. If so, the byte protocol reverse-engineered
+below likely rides unchanged over TCP as well as serial — see "Transport
+layer" at the bottom.
 
 **Practically relevant:** this Mac already has an interface on the
 `192.168.32.0/24` subnet (confirmed — `radio-audio-fingerprint`'s web app
@@ -73,7 +80,7 @@ control documented below: it's very likely a per-channel Analog-vs-Dante
 source select, with `Analog = 00` confirmed and the Dante-side value still
 unknown (see "Open questions").
 
-Make/model of the physical matrix not yet fully confirmed — see above.
+Matches the confirmed DP8004's 4x4 Dante + 4x4 analog split exactly.
 
 ## Frame grammar
 
@@ -284,12 +291,12 @@ Ranked roughly by how much they block actually building the GUI:
 ## Transport layer
 
 Not fully documented yet, but narrowed down considerably by the device
-identification above: this unit exposes RS232, RS485, *and* a TCP/IP
-network port (it has a real IP, `192.168.32.188`, configured through the
-app's own Device Manage dialog), and vendor literature for this product
-family describes "central control" working over all three. So the frame
-grammar above most likely applies unchanged regardless of which transport
-is used — the open questions are the specifics of each:
+identification above: the DP8004 confirms RS232 (Phoenix), RS485 (Phoenix),
+and TCP/IP (RJ-45) as its three control interfaces, and it's configured
+with a real IP (`192.168.32.188`) right now. No official protocol document
+was found to confirm the frame grammar is identical across all three, but
+it's the reasonable default assumption for this kind of "central control"
+dialog — the open questions are the specifics of each:
 
 - **If TCP/IP** (the practically preferable option, since this Mac is
   already on that subnet): which port, and is it a raw socket carrying
