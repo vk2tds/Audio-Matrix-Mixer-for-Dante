@@ -147,27 +147,27 @@ the default is adequate here. Combined with auto-login, this covers both
 failure modes: KeepAlive handles a service dying while macOS stays up,
 auto-login handles macOS itself coming back after a panic or power cut.
 
-**Gap found while reviewing this**: `dante_web_app.py`'s own self-healing —
-the "Restart daemon" button and the automatic health-check restart in
-[`_restart_daemon_process`](dante_web_app.py:53) — deliberately avoids
-`netaudio server restart` (see the comment at
-[`api_restart_daemon`](dante_web_app.py:207)) and instead signals the PID in
-`logs/daemon.pid`. That pidfile is only ever written by `run.sh`
+**Gap found and fixed while reviewing this**: `dante_web_app.py`'s own
+self-healing — the "Restart daemon" button and the automatic health-check
+restart in [`_restart_daemon_process`](dante_web_app.py:53) — used to signal
+a PID read from `logs/daemon.pid`, only ever written by `run.sh`
 ([`run.sh`](run.sh:39)). In the current production setup the daemon is
 launched directly by the `netaudio-daemon` LaunchAgent, **not** via
-`run.sh`, so `logs/daemon.pid` never gets created — confirmed missing on
-this machine. Practically: the manual "Restart daemon" button and the
-automatic restart-on-stale-device-data health check are both silently
-no-ops right now, always failing with "No daemon pidfile found." This is the
-same self-healing path that would have kicked in for the recurring
-`STUDIO-ONE-AUX` "device did not respond" errors — it just isn't firing.
+`run.sh`, so that pidfile never got created — confirmed missing on this
+machine, meaning both the manual button and the automatic
+restart-on-stale-device-data health check had been silently no-oping (this
+is the same self-healing path that would have kicked in for the recurring
+`STUDIO-ONE-AUX` "device did not respond" errors). Fixed: it now runs
+`launchctl kickstart -k gui/$(id -u)/au.net.radio-active.netaudio-daemon`
+instead — the launchd-native equivalent, no pidfile needed. Verified live via
+the actual `/api/daemon/restart` endpoint: daemon pid changed, came back up
+listening on port 9000, devices still reachable afterward.
 
-Fix would be to make `_restart_daemon_process` target the LaunchAgent
-directly instead of a pidfile, e.g. `launchctl kickstart -k
-gui/$(id -u)/au.net.radio-active.netaudio-daemon` — that's the launchd-native
-equivalent of "signal the supervised process to restart" the code comment
-already describes doing manually, and needs no pidfile at all. Not applied
-yet — flagging for a decision before touching the restart code path.
+## Roadmap / ideas
+
+- **GUI for the physical matrix.** We have an actual physical audio matrix
+  alongside the Dante-side routing this app already controls — at some
+  stage, build a control surface for it too. No design/scope decided yet.
 
 ## Icons (Font Awesome)
 
