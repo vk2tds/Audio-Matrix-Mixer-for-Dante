@@ -167,7 +167,11 @@ listening on port 9000, devices still reachable afterward.
 
 - **GUI for the physical matrix.** We have an actual physical audio matrix
   alongside the Dante-side routing this app already controls — at some
-  stage, build a control surface for it too. No design/scope decided yet.
+  stage, build a control surface for it too. Its serial control protocol is
+  being reverse-engineered from the matrix's own config tool; see
+  [docs/physical-matrix-protocol.md](docs/physical-matrix-protocol.md) for
+  what's confirmed so far and the open holes (transport layer, Gain/Mute Set
+  frames, and others still unknown). No GUI design/scope decided yet.
 
 ## Icons (Font Awesome)
 
