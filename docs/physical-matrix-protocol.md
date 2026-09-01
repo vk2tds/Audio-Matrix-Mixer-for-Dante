@@ -1,4 +1,4 @@
-# Physical matrix — serial control protocol
+# Physical matrix — control protocol
 
 Reverse-engineered from screenshots of the matrix's own "Central Control"
 config tool, which has a Type/Control/parameter form that generates the
@@ -6,14 +6,74 @@ raw command bytes for each combination ("Code" field) — presumably so an
 installer can copy them into a 3rd-party control system (Crestron/AMX/etc.)
 without needing a full protocol doc. This page works backward from ~14
 distinct example frames to the general grammar, so it can be implemented
-against directly once the transport layer (serial port, baud rate, framing —
-see "Open questions" below) is known. Nothing here has been confirmed against
-an actual vendor protocol document — everything is inferred from the
-examples, so treat the "inferred" rows with appropriate suspicion until
-tested against real hardware.
+against directly once the transport (see "Transport layer" below) is
+nailed down. Nothing here has been confirmed against an actual vendor
+protocol document — everything is inferred from the examples, so treat the
+"inferred" rows with appropriate suspicion until tested against real
+hardware.
 
-**Make/model of the physical matrix not yet recorded here** — worth adding
-once confirmed, so this doc (and any future vendor PDF) can be cross-checked.
+## Device identification
+
+From the control app's Device Manage dialog and Device List panel:
+
+| Field | Value |
+|---|---|
+| Device Name / ID | `D521881` |
+| Device Group (nickname) | `Ben&fellow` |
+| Software version | 2.4.38 (2019-12-13) |
+| Firmware version | 3.1.9 (2020-04-23) |
+| Hardware version | 0.0.0.0 *(unset/unused by this unit)* |
+| IP | `192.168.32.188` |
+| Gateway | `192.168.32.1` |
+| MAC | `9C-A5-25-A6-C8-73` |
+
+**Likely vendor: Guangzhou DSPPA Audio Co.** (dsppatech.com / dsppacs.com) —
+not yet confirmed against this exact unit, but their DP70xx/DP80xx
+"professional audio processor" family (e.g. the
+[DP8050 datasheet](https://www.dsppatech.com/uploads/file/data-sheet-dp8050-8-in-8-out-professional-ai-audio-processor.pdf))
+matches the observed feature set closely: 8 in/8 out, AFC, AEC, ANC, Auto
+Mix, Matrix Mix, Noise Gate, PEQ — and DSPPA's own literature for that
+family explicitly describes "central control via RS232, RS485, and TCP/IP"
+for exactly this kind of unit, which lines up with the "Central Control"
+dialog name. `D521881` doesn't look like a DSPPA model number, though —
+more likely a per-unit serial/device ID — so treat the vendor match as
+strong-but-unconfirmed until checked against the actual box's markings or
+a DSPPA support contact.
+
+The MAC's OUI (`9C-A5-25`) is registered to **Shandong USR IOT Technology
+Limited** — a maker of serial-to-Ethernet bridge modules. That's a good fit
+for how a DSP box like this typically exposes a TCP/IP port: an embedded
+USR IOT module bridging its internal RS232/RS485 UART onto the network,
+rather than a from-scratch IP stack. If so, the byte protocol reverse-
+engineered below likely rides unchanged over TCP as well as serial — see
+"Transport layer" at the bottom.
+
+**Practically relevant:** this Mac already has an interface on the
+`192.168.32.0/24` subnet (confirmed — `radio-audio-fingerprint`'s web app
+bound to `192.168.32.142` earlier in this session), so a future GUI running
+on this same machine should be able to reach `192.168.32.188` directly with
+no new network segment needed, if the transport does turn out to be TCP/IP.
+
+## Signal chain (from the main app's routing view)
+
+Per-input chain: **AFC** (acoustic feedback cancellation — matches the
+`08 Feedback` control below) → **Noise Gate** → **PEQ-X** (parametric EQ) →
+**Delay** → feeds into **Auto Mix** logic and the **Matrix Mix** crosspoint
+grid. Per-output chain, after Matrix Mix: **PEQ-X** → **Delay** →
+**COMP** (compressor) → **Limit** → output.
+
+8 inputs (`IN A`–`IN H`), 8 outputs (`OUT 1`–`OUT 8`) — matches the channel
+range already inferred from Mute's channel dropdown (ALL, 1–8) and Matrix
+Mixer's observed input/output channel numbers.
+
+Inputs A–D show source **Dante** (module version `7.3`); inputs E–H show
+source **Analog** (`7.6`/`3.0` — meaning unclear, possibly a sub-module
+firmware version rather than a level). This refines the `0D Input Mode`
+control documented below: it's very likely a per-channel Analog-vs-Dante
+source select, with `Analog = 00` confirmed and the Dante-side value still
+unknown (see "Open questions").
+
+Make/model of the physical matrix not yet fully confirmed — see above.
 
 ## Frame grammar
 
@@ -53,11 +113,11 @@ simplified logical view and the real transport adds a checksum before `EE`
 | `0D` | Input Mode | — | ✅ |
 
 The `05` = "Increase/Decreases" mapping is inferred purely from dropdown
-*position* (it sits between Gain and Line/Mic in the Control list — see
-`open_questions.md`-worthy screenshot with the dropdown open) and the fact
-that `04` (Gain) and `06` (Line/Mic) sandwich it numerically. No example frame
-for it was captured, so treat this one value as unconfirmed until an actual
-Set/Read example is seen.
+*position* (it sits between Gain and Line/Mic in the Control list, seen in
+a screenshot with that dropdown open) and the fact that `04` (Gain) and
+`06` (Line/Mic) sandwich it numerically. No example frame for it was
+captured, so treat this one value as unconfirmed until an actual Set/Read
+example is seen — see "Open questions" below.
 
 ## Per-control data layout
 
@@ -223,6 +283,28 @@ Ranked roughly by how much they block actually building the GUI:
 
 ## Transport layer
 
-Not yet documented — serial port parameters (baud rate, data/stop bits,
-parity), physical interface (RS232 vs RS485), and any addressing scheme
-implied by the constant `FF` byte above are all still to come.
+Not fully documented yet, but narrowed down considerably by the device
+identification above: this unit exposes RS232, RS485, *and* a TCP/IP
+network port (it has a real IP, `192.168.32.188`, configured through the
+app's own Device Manage dialog), and vendor literature for this product
+family describes "central control" working over all three. So the frame
+grammar above most likely applies unchanged regardless of which transport
+is used — the open questions are the specifics of each:
+
+- **If TCP/IP** (the practically preferable option, since this Mac is
+  already on that subnet): which port, and is it a raw socket carrying
+  exactly these frame bytes, or is there an outer wrapper (e.g. HTTP, or a
+  vendor session/login handshake before raw bytes are accepted)? The MAC's
+  OUI belongs to Shandong USR IOT (serial-to-Ethernet bridge modules),
+  which suggests a raw transparent RS232-over-TCP bridge is plausible — USR
+  IOT's own modules commonly default to TCP port `8899` for this, but that's
+  a guess pending confirmation, not something observed.
+- **If RS232/RS485**: baud rate, data/stop bits, and parity are all still
+  unknown, as is what the constant `FF` address byte means on a multi-drop
+  RS485 bus with more than one unit.
+
+Cheapest way to resolve this: open a raw TCP connection to
+`192.168.32.188` (try `8899` first) from this machine, send one of the
+confirmed Read frames above (e.g. Scene read:
+`A5 C3 3C 5A FF 63 02 00 EE`), and see what comes back — would also
+resolve the "no response frame observed" hole in one shot.
