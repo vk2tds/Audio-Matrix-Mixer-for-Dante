@@ -5,12 +5,41 @@ config tool, which has a Type/Control/parameter form that generates the
 raw command bytes for each combination ("Code" field) — presumably so an
 installer can copy them into a 3rd-party control system (Crestron/AMX/etc.)
 without needing a full protocol doc. This page works backward from ~14
-distinct example frames to the general grammar, so it can be implemented
-against directly once the transport (see "Transport layer" below) is
-nailed down. Nothing here has been confirmed against an actual vendor
-protocol document — everything is inferred from the examples, so treat the
-"inferred" rows with appropriate suspicion until tested against real
-hardware.
+distinct example frames to the general grammar. Nothing here has been
+confirmed against an actual vendor protocol document — everything is
+inferred from the examples (and, for Mute and the transport, cross-checked
+against a real working client — see "Existing client code" below), so treat
+the still-"inferred" rows with appropriate suspicion until tested further.
+
+## Existing client code: `2NBC_MatrixMixer`
+
+There's already a small VB.NET WinForms app for this exact unit:
+[github.com/vk2tds/2NBC_MatrixMixer](https://github.com/vk2tds/2NBC_MatrixMixer)
+(`MatrixControl/Form1.vb`). It's not a general matrix GUI — it's a
+purpose-built timer/preset tool for one venue: buttons for "Mute 1/2/3",
+"Mute Raduga", and 60/120-minute auto-revert timers that switch between a
+few hardcoded mute presets (`connectionsNormal`, `connectionsRaduga`,
+`connectionsMuteMix1/2/3`). But it settles two of the biggest open questions
+below by actually doing them over the wire:
+
+- **Transport confirmed: raw TCP socket, no wrapper.**
+  `New TcpClient(My.Settings.MixerIP, My.Settings.MixerPort)`, then
+  `stream.Write` of the exact frame bytes directly — no HTTP, no
+  session/login handshake. Configured (`App.config`) as
+  **`192.168.32.188:8234`** — same IP as the Device Manage dialog, and a
+  real port number rather than the `8899` guess this doc previously made.
+- **Mute Set frame confirmed** (`updateMatrixMute`, `Form1.vb:196`): `[I/O
+  selector, channel, mute-bit]`, `N=3` — see the updated Mute section below.
+- **A bug found in the process**: `updateMatrixRoute` (`Form1.vb:150`),
+  the function that would actually drive Matrix Mixer crosspoint changes,
+  ends its frame with `&HFF` instead of `&HEE` — inconsistent with every
+  Matrix Mixer example captured from the vendor's own tool, and with every
+  other frame this same app itself sends. It also turns out to be **dead
+  code** — its only call site is commented out (`Form1.vb:277`,
+  `'updateMatrixRoute(stream, item)`), so this has never actually been
+  exercised against the hardware. Anyone building on this: fix the
+  terminator before relying on it, and treat crosspoint routing over TCP as
+  untested even though Mute is now confirmed working.
 
 ## Device identification
 
@@ -48,18 +77,15 @@ protocol documentation is wanted, DSPPA's export contact is
 export@dsppa.com / +86 20-37166520.
 
 The MAC's OUI (`9C-A5-25`) is registered to **Shandong USR IOT Technology
-Limited** — a maker of serial-to-Ethernet bridge modules. That's a good fit
-for how the DP8004 exposes its RJ-45 TCP/IP port: likely an embedded USR
-IOT module bridging its internal RS232/RS485 UART onto the network, rather
-than a from-scratch IP stack. If so, the byte protocol reverse-engineered
-below likely rides unchanged over TCP as well as serial — see "Transport
-layer" at the bottom.
+Limited** — a maker of serial-to-Ethernet bridge modules, consistent with
+how the DP8004 exposes its RJ-45 TCP/IP port (see "Transport layer" —
+TCP is now confirmed working, not just plausible).
 
 **Practically relevant:** this Mac already has an interface on the
 `192.168.32.0/24` subnet (confirmed — `radio-audio-fingerprint`'s web app
 bound to `192.168.32.142` earlier in this session), so a future GUI running
-on this same machine should be able to reach `192.168.32.188` directly with
-no new network segment needed, if the transport does turn out to be TCP/IP.
+on this same machine can reach `192.168.32.188` directly, no new network
+segment needed.
 
 ## Signal chain (from the main app's routing view)
 
@@ -154,15 +180,19 @@ Full frames:
 directly (UI's channel dropdown shows ALL, 1–8 — an 8-channel matrix per
 side, at least for this control).
 
-No Mute **Set** example was captured — only Read. The Set frame almost
-certainly adds a third data byte (mute on/off, `00`/`01` by analogy with
-every other boolean control below), making it `N=3`, but that's inferred,
-not observed.
+**Set confirmed** by `2NBC_MatrixMixer`'s `updateMatrixMute` (see "Existing
+client code" above), which has actually driven this against the real unit:
+`N=3`, data = `[I/O selector, channel, mute-bit]` — same `01`=Input/`02`=Output
+selector as Read, plus a third byte: `00`=unmuted, `01`=muted. Example
+(channel 1, either side): `A5 C3 3C 5A FF 36 03 03 01 01 01 EE`. That
+client only ever targets specific channels 1–8, never `00`=ALL, on Set —
+whether `ALL` is accepted for Set is still unconfirmed.
 
 Full frames:
 - Read input ch1: `A5 C3 3C 5A FF 63 03 02 01 01 EE`
 - Read output ALL: `A5 C3 3C 5A FF 63 03 02 02 00 EE`
 - Read output ch3: `A5 C3 3C 5A FF 63 03 02 02 03 EE`
+- Set input ch1 muted: `A5 C3 3C 5A FF 36 03 03 01 01 01 EE`
 
 ### Gain (`04`)
 
@@ -228,6 +258,13 @@ a GUI for the physical matrix" feature depends on this control. No Read
 example captured — unknown whether reading a crosspoint's state needs
 `[input, output]` (2 bytes) mirroring the Set shape.
 
+**Caution**: `2NBC_MatrixMixer`'s attempt at this (`updateMatrixRoute`,
+see "Existing client code" above) ends the frame with `&HFF` instead of
+`&HEE`, and has never actually been sent to the hardware (dead code, its
+call site is commented out) — so unlike Mute, this control has zero
+real-world confirmation behind it yet. Use the `EE`-terminated frames below
+(straight from the vendor's own tool), not that app's version.
+
 Full frames:
 - `A5 C3 3C 5A FF 36 09 03 01 01 00 EE`
 - `A5 C3 3C 5A FF 36 09 03 04 06 00 EE`
@@ -253,65 +290,68 @@ Ranked roughly by how much they block actually building the GUI:
    a third byte? What's the value encoding — raw dB, a 0–100/0–127 range, a
    signed byte for negative gain? This blocks the single most basic mixer
    operation (adjusting a fader).
-2. **Mute Set is uncaptured** — only Read was shown. Almost certainly
-   `[I/O, channel, on/off]` by analogy with everything else, but not
-   confirmed.
-3. **Control IDs `0A`–`0C` are a complete gap.** Between Matrix Mixer (`09`)
+2. ~~Mute Set is uncaptured~~ — **resolved**: confirmed via
+   `2NBC_MatrixMixer`'s working `updateMatrixMute`, see the Mute section
+   above.
+3. **Matrix Mixer Set is unverified against real hardware.** The frame shape
+   is confirmed from the vendor's own tool, but the only client code that's
+   tried to send it has a terminator bug and was never actually run (see
+   "Existing client code") — so, unlike Mute, nobody has confirmed this
+   control actually works over the wire yet. Worth an early, low-stakes test
+   once building against it.
+4. **Control IDs `0A`–`0C` are a complete gap.** Between Matrix Mixer (`09`)
    and Input Mode (`0D`) there are three unused byte values with no
    corresponding control shown in any screenshot or dropdown. Either
    reserved, or there are 1–3 more controls this "Central Control" dialog's
    dropdown didn't show in the captured screenshot (worth re-opening that
    dropdown and checking if it scrolls further).
-4. **No response/reply frame has been observed at all.** Every example here
-   is an outgoing query or command; nothing shows what the matrix sends
-   *back* — for a Read, or as an ack for a Set. Unknown: reply framing,
-   whether replies reuse Type `63` or use a distinct opcode, how the actual
-   value comes back for Scene/Mute/Gain reads.
-5. **No checksum/CRC visible** — confirm whether the wire protocol really
+5. **No response/reply frame has been observed at all.** `2NBC_MatrixMixer`
+   reads `stream.DataAvailable` after each write and logs whatever comes
+   back as raw hex/ASCII, but never parses it — so even though it's a
+   working client, it doesn't tell us the reply format either. Still
+   unknown: reply framing, whether replies reuse Type `63` or use a
+   distinct opcode, how the actual value comes back for Scene/Mute/Gain
+   reads.
+6. **No checksum/CRC visible** — confirm whether the wire protocol really
    omits one, or whether this config tool's Code field is simplified.
-6. **Address byte (`FF`) meaning unconfirmed.** Always `FF` in every capture
+   `2NBC_MatrixMixer` sends frames with no checksum and (per its logging)
+   gets a response, which is a point in favor of "genuinely checksum-less."
+7. **Address byte (`FF`) meaning unconfirmed.** Always `FF` in every capture
    — never seen varying, so we can't tell if it's a fixed constant or a
    device address that matters once one goes to a bus with multiple
-   addressable units. Relevant to the transport layer work (RS232
-   point-to-point vs. RS485 multi-drop).
-7. **Feedback "Level" range** — only `OFF (00)` seen; other levels unknown.
-8. **Input Mode "Mode" range** — only `Analog (00)` seen; other modes
+   addressable units. Relevant if RS232/RS485 is ever used instead of the
+   now-confirmed TCP path.
+8. **Feedback "Level" range** — only `OFF (00)` seen; other levels unknown.
+9. **Input Mode "Mode" range** — only `Analog (00)` seen; other modes
    unknown.
-9. **Scene number range** — only `01` seen; max scene count unconfirmed.
-10. **Matrix size** — inputs/outputs seen only as 1, 3, 4, 6 (Matrix Mixer)
+10. **Scene number range** — only `01` seen; max scene count unconfirmed.
+11. **Matrix size** — inputs/outputs seen only as 1, 3, 4, 6 (Matrix Mixer)
     and up to 8 (Mute's channel dropdown). Actual full I/O count of the
     physical unit not yet confirmed against these numbers.
-11. **`Increase/Decreases` control (`05`, inferred)** — no example frame at
+12. **`Increase/Decreases` control (`05`, inferred)** — no example frame at
     all, value inferred purely from its position in the Control dropdown
     list between Gain and Line/Mic. Likely a relative nudge (vs. Gain's
     presumed absolute set) but completely unconfirmed.
-12. **`ALL` channel encoding (`00`) only confirmed for Mute/Output.** Unknown
+13. **`ALL` channel encoding (`00`) only confirmed for Mute/Output.** Unknown
     whether `ALL` is valid for Gain, Line/Mic, 48V, etc., or specific to Mute.
 
 ## Transport layer
 
-Not fully documented yet, but narrowed down considerably by the device
-identification above: the DP8004 confirms RS232 (Phoenix), RS485 (Phoenix),
-and TCP/IP (RJ-45) as its three control interfaces, and it's configured
-with a real IP (`192.168.32.188`) right now. No official protocol document
-was found to confirm the frame grammar is identical across all three, but
-it's the reasonable default assumption for this kind of "central control"
-dialog — the open questions are the specifics of each:
+**Confirmed via `2NBC_MatrixMixer`** (see "Existing client code" above):
+plain **TCP, `192.168.32.188:8234`**, raw socket — `TcpClient` connect,
+`stream.Write` the frame bytes directly, no HTTP wrapper, no login/session
+handshake. That guess of port `8899` (USR IOT's common default) in an
+earlier version of this doc was wrong; `8234` is what's actually configured
+and, per that app's commit history ("Fix Network Exceptions" etc.), has
+been used against the real hardware.
 
-- **If TCP/IP** (the practically preferable option, since this Mac is
-  already on that subnet): which port, and is it a raw socket carrying
-  exactly these frame bytes, or is there an outer wrapper (e.g. HTTP, or a
-  vendor session/login handshake before raw bytes are accepted)? The MAC's
-  OUI belongs to Shandong USR IOT (serial-to-Ethernet bridge modules),
-  which suggests a raw transparent RS232-over-TCP bridge is plausible — USR
-  IOT's own modules commonly default to TCP port `8899` for this, but that's
-  a guess pending confirmation, not something observed.
-- **If RS232/RS485**: baud rate, data/stop bits, and parity are all still
-  unknown, as is what the constant `FF` address byte means on a multi-drop
-  RS485 bus with more than one unit.
+Remaining transport-level unknowns, now secondary since TCP is the
+practical path forward (this Mac is already on `192.168.32.0/24`):
 
-Cheapest way to resolve this: open a raw TCP connection to
-`192.168.32.188` (try `8899` first) from this machine, send one of the
-confirmed Read frames above (e.g. Scene read:
-`A5 C3 3C 5A FF 63 02 00 EE`), and see what comes back — would also
-resolve the "no response frame observed" hole in one shot.
+- Whether the device needs a fresh `TcpClient` connection per command (what
+  `2NBC_MatrixMixer` does — connect, send, close) or tolerates/prefers a
+  held-open connection for multiple commands in a row — not tested either
+  way.
+- RS232/RS485 baud rate, data/stop bits, and parity, and what the constant
+  `FF` address byte would mean on a multi-drop RS485 bus — all still
+  unknown, but low priority now that TCP is confirmed working.
