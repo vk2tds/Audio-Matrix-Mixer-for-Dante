@@ -116,11 +116,32 @@ Decoded across all 55 samples:
 So: **25 real metered points**, each a `[0.0 filler, dB float]` pair. 25
 doesn't map cleanly onto the DP8004's known 8 inputs + 8 outputs — it's
 likely including extra metering taps (pre/post-AFC, AutoMix bus points, a
-master) that aren't disambiguated yet. **Still open**: which slot index
-is which physical channel. Cheapest way to nail that down: poll while
-changing one channel at a time (mute it, or feed it a known tone) and see
-exactly which odd-indexed slot moves — same technique used to decode Gain,
-just applied to this protocol instead.
+master) that aren't disambiguated yet.
+
+**Group identity confirmed** (though not yet the exact per-channel order
+within each group) by cross-referencing what was physically patched during
+this capture against the main app's own screenshot at the time: **only
+inputs A and B carried signal, and only outputs 1–6 carried signal** (7 and
+8 were silent). That matches the two active groups exactly — the "pair"
+(slots 1, 3) is inputs A/B, and the "six" (slots 17, 19, 21, 23, 25, 27) is
+outputs 1–6. Still unconfirmed which slot is A vs. B, and which of the six
+is which specific output number.
+
+The floor count doesn't fully add up to physical channels, though: 17
+slots sat flat at −100.0, but only 8 physical channels were actually
+silent (inputs C–H, outputs 7–8). That leaves **9 unexplained always-silent
+slots** with no physical channel to attribute them to — presumably the
+extra metering taps mentioned above (AutoMix bus points, pre/post-AFC,
+etc.), which would obviously also read −100.0 if fed only by already-silent
+inputs. Doesn't change the mapping conclusion above, just means the full
+25-slot picture still isn't complete.
+
+Cheapest way to finish this off: poll while changing one channel at a time
+(mute it, or feed it a known tone) and see exactly which odd-indexed slot
+moves — same technique used to decode Gain, just applied to this protocol
+instead. Now only needs to distinguish within the two known groups (which
+of slots {1,3} is A vs B; which of {17,19,21,23,25,27} is which output)
+rather than starting from scratch.
 
 An initial handshake happens once per TCP connection, before any polling:
 a `03 00` "hello" command (seen in `Matrix Discovery Startup and
