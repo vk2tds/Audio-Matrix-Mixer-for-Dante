@@ -172,12 +172,14 @@ From the control app's Device Manage dialog and Device List panel:
 Conference Audio Processor with 4x4 Dante"
 ([product page](https://www.dsppatech.com/product/dp8004-8channels-conference-audio-processor-with-4x4-dante.html),
 [datasheet PDF](https://www.dsppatech.com/uploads/file/20210422/11/data-sheetdp8004-8-channels-conference.pdf) —
-image-based, no protocol detail in it). 8 in/8 out total, with 4 of each
-side being Dante (matches inputs A–D showing Dante source, E–H showing
-Analog, in the signal-chain screenshot above) and built-in feedback
-suppression, auto-mix, matrix mix, EQ, crossover, and compressor — matches
-every control we've reverse-engineered below. `D521881` is this specific
-unit's serial/device ID, not the model number.
+image-based, no protocol detail in it). 8 in/8 out total; of the 8 inputs,
+A–D are the "4x4 Dante" ones — each individually switchable between Dante
+and Analog source (confirmed by the device's owner: shown as Dante by
+default in the signal-chain screenshot below, but selectable as Analog per
+channel), while E–H are analog-only. Built-in feedback suppression,
+auto-mix, matrix mix, EQ, crossover, and compressor — matches every control
+we've reverse-engineered below. `D521881` is this specific unit's
+serial/device ID, not the model number.
 
 Confirmed control interfaces (from the product page): **RS232** (Phoenix
 connector), **RS485** (Phoenix connector), **TCP/IP** (RJ-45), **USB**
@@ -211,12 +213,17 @@ grid. Per-output chain, after Matrix Mix: **PEQ-X** → **Delay** →
 range already inferred from Mute's channel dropdown (ALL, 1–8) and Matrix
 Mixer's observed input/output channel numbers.
 
-Inputs A–D show source **Dante** (module version `7.3`); inputs E–H show
-source **Analog** (`7.6`/`3.0` — meaning unclear, possibly a sub-module
-firmware version rather than a level). This refines the `0D Input Mode`
-control documented below: it's very likely a per-channel Analog-vs-Dante
-source select, with `Analog = 00` confirmed and the Dante-side value still
-unknown (see "Open questions").
+Inputs A–D show source **Dante** in this screenshot (module version `7.3`)
+but are individually switchable to **Analog** — confirmed by the device's
+owner, who notes it's not clear this switch has any practical effect (not
+pursuing further). Inputs E–H are analog-only, shown with their own
+readout (`7.6`/`3.0` — meaning still unclear, possibly a sub-module
+firmware version rather than a level). This confirms the `0D Input Mode`
+control documented below is exactly this per-channel Analog-vs-Dante
+source select for the A–D group — the earlier captured example (channel 3,
+i.e. IN C, set to Analog) makes sense as one of these four switchable
+inputs. `Analog = 00` confirmed; the Dante-side value still unknown (see
+"Open questions").
 
 Matches the confirmed DP8004's 4x4 Dante + 4x4 analog split exactly.
 
@@ -406,10 +413,15 @@ Full frames:
 
 | Type | Data bytes | Meaning |
 |---|---|---|
-| Set | `03 00` | Channel 3 → Mode = Analog (`00`) |
+| Set | `03 00` | Channel 3 (IN C) → Mode = Analog (`00`) |
 
-Only `Mode=Analog` captured. Other mode values (digital/AES3? network input?
-— unknown what alternatives this unit actually has) aren't recorded.
+This is the per-channel Dante/Analog source switch for the four "4x4
+Dante" inputs (A–D, i.e. channels 1–4) — see "Signal chain" above. Channel
+3 = IN C, one of the four switchable ones, consistent with only channels
+1–4 being valid targets for this control; E–H (5–8) are analog-only and
+presumably don't accept it. Only `Mode=Analog` captured — the Dante-side
+value (presumably `01`) is unconfirmed, and the device's owner notes it's
+not obvious this switch has any audible/practical effect either way.
 
 Full frame: `A5 C3 3C 5A FF 36 0D 02 03 00 EE`
 
@@ -456,8 +468,10 @@ Ranked roughly by how much they block actually building the GUI:
    addressable units. Relevant if RS232/RS485 is ever used instead of the
    now-confirmed TCP path.
 8. **Feedback "Level" range** — only `OFF (00)` seen; other levels unknown.
-9. **Input Mode "Mode" range** — only `Analog (00)` seen; other modes
-   unknown.
+9. **Input Mode "Mode" range** — only `Analog (00)` seen; the Dante-side
+   value (presumably `01`) is unconfirmed. Scope is now clear though: only
+   channels 1–4 (IN A–D, the "4x4 Dante" inputs) are valid targets — E–H
+   are analog-only.
 10. **Scene number range** — only `01` seen; max scene count unconfirmed.
 11. **Matrix size** — inputs/outputs seen only as 1, 3, 4, 6 (Matrix Mixer)
     and up to 8 (Mute's channel dropdown). Actual full I/O count of the
