@@ -1733,5 +1733,63 @@
     },
     "ok": false,
     "error": "1 operation(s) failed"
+  },
+  {
+    "timestamp": 1787261358.9931982,
+    "kind": "/refresh",
+    "detail": {},
+    "ok": true,
+    "error": null
+  },
+  {
+    "timestamp": 1787261375.239894,
+    "kind": "mixer:output_route",
+    "detail": {
+      "bus_id": "bus1",
+      "device": "Dante Virtual Soundcard",
+      "channel": 0
+    },
+    "ok": true,
+    "error": null
+  },
+  {
+    "timestamp": 1787261381.9692018,
+    "kind": "mixer:input_assign",
+    "detail": {
+      "bus_id": "bus1",
+      "slot": 0,
+      "deviceUID": "AUDINATE-DVS-UID",
+      "channel": 0,
+      "channel2": null
+    },
+    "ok": true,
+    "error": null
+  },
+  {
+    "timestamp": 1787261401.4227588,
+    "kind": "/refresh",
+    "detail": {},
+    "ok": true,
+    "error": null
+  },
+  {
+    "timestamp": 1788248130.816601,
+    "kind": "daemon:restart",
+    "detail": {
+      "reason": "manual",
+      "target": "gui/505/au.net.radio-active.netaudio-daemon"
+    },
+    "ok": true,
+    "error": null
+  },
+  {
+    "timestamp": 1790633777.951803,
+    "kind": "daemon:auto-restart",
+    "detail": {
+      "reason": "incomplete channel data: StudioOne.local.",
+      "target": "gui/505/au.net.radio-active.netaudio-daemon"
+    },
+    "ok": true,
+    "error": null
   }
 ]
